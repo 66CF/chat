@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【应用标题】</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="feedOverlay" class="feed-overlay" onclick="toggleFeedPanel()"></div>
+<div id="gameOverlay" class="game-overlay" onclick="toggleGamePanel()"></div>
+<div id="gamePanel" class="game-panel">
+  <div class="game-panel-header">
+    <h3>🎮 小游戏</h3>
+    <button class="game-panel-close" onclick="toggleGamePanel()">✕</button>
+  </div>
+  <div class="game-panel-scroll">
+    <div class="game-card" onclick="startGame('turtle_soup')">
+      <div class="game-icon">🐢🍲</div>
+      <div class="game-title">海龟汤</div>
+      <div class="game-desc">【角色称呼代词】出一个神秘情境，你通过问「是/否」问题来推理出真相！可以让【角色称呼代词】自己出题，也可以联网搜索题目。</div>
+    </div>
+    <div class="game-card" onclick="startGame('truth_dare')">
+      <div class="game-icon">🎯</div>
+      <div class="game-title">真心话大冒险</div>
+      <div class="game-desc">选择真心话或大冒险，【角色称呼代词】会出符合你们关系的专属题目！</div>
+    </div>
+    <div class="game-card" onclick="startGame('story_relay')">
+      <div class="game-icon">📖</div>
+      <div class="game-title">故事接龙</div>
+      <div class="game-desc">你写一段【角色称呼代词】续一段，一起创造一个完整的故事。支持长文本创作。</div>
+    </div>
+    <div class="game-card" onclick="startGame('cooking')">
+      <div class="game-icon">🍳</div>
+      <div class="game-title">一起做饭</div>
+      <div class="game-desc">你决定食材和做法，【角色称呼代词】跟你一起做！可能做出美味大餐，也可能做出黑暗料理…</div>
+    </div>
+  </div>
+</div>
+<div id="feedPanel" class="feed-panel">
+  <div class="feed-panel-header">
+    <h3>🍴 喂【角色称呼代词】吃东西</h3>
+    <button class="feed-panel-close" onclick="toggleFeedPanel()">✕</button>
+  </div>
+  <div class="feed-scroll">
+    <div class="feed-category">🍚 主食</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍚','米饭')"><span class="feed-emoji">🍚</span><span class="feed-name">米饭</span></div>
+      <div class="feed-item" onclick="selectFood('🍜','面条')"><span class="feed-emoji">🍜</span><span class="feed-name">面条</span></div>
+      <div class="feed-item" onclick="selectFood('🥟','饺子')"><span class="feed-emoji">🥟</span><span class="feed-name">饺子</span></div>
+      <div class="feed-item" onclick="selectFood('🍞','面包')"><span class="feed-emoji">🍞</span><span class="feed-name">面包</span></div>
+      <div class="feed-item" onclick="selectFood('🍕','披萨')"><span class="feed-emoji">🍕</span><span class="feed-name">披萨</span></div>
+      <div class="feed-item" onclick="selectFood('🍔','汉堡')"><span class="feed-emoji">🍔</span><span class="feed-name">汉堡</span></div>
+      <div class="feed-item" onclick="selectFood('🌮','墨西哥卷')"><span class="feed-emoji">🌮</span><span class="feed-name">卷饼</span></div>
+      <div class="feed-item" onclick="selectFood('🍣','寿司')"><span class="feed-emoji">🍣</span><span class="feed-name">寿司</span></div>
+      <div class="feed-item" onclick="selectFood('🥗','沙拉')"><span class="feed-emoji">🥗</span><span class="feed-name">沙拉</span></div>
+    </div>
+    <div class="feed-category">🍖 菜肴</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍖','排骨')"><span class="feed-emoji">🍖</span><span class="feed-name">排骨</span></div>
+      <div class="feed-item" onclick="selectFood('🍗','鸡腿')"><span class="feed-emoji">🍗</span><span class="feed-name">鸡腿</span></div>
+      <div class="feed-item" onclick="selectFood('🥩','牛排')"><span class="feed-emoji">🥩</span><span class="feed-name">牛排</span></div>
+      <div class="feed-item" onclick="selectFood('🍤','虾')"><span class="feed-emoji">🍤</span><span class="feed-name">虾</span></div>
+      <div class="feed-item" onclick="selectFood('🐟','鱼')"><span class="feed-emoji">🐟</span><span class="feed-name">烤鱼</span></div>
+      <div class="feed-item" onclick="selectFood('🥚','鸡蛋')"><span class="feed-emoji">🥚</span><span class="feed-name">鸡蛋</span></div>
+      <div class="feed-item" onclick="selectFood('🫕','火锅')"><span class="feed-emoji">🫕</span><span class="feed-name">火锅</span></div>
+      <div class="feed-item" onclick="selectFood('🍲','炖汤')"><span class="feed-emoji">🍲</span><span class="feed-name">炖汤</span></div>
+      <div class="feed-item" onclick="selectFood('🧆','丸子')"><span class="feed-emoji">🧆</span><span class="feed-name">丸子</span></div>
+    </div>
+    <div class="feed-category">🍰 甜点</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍰','蛋糕')"><span class="feed-emoji">🍰</span><span class="feed-name">蛋糕</span></div>
+      <div class="feed-item" onclick="selectFood('🍦','冰淇淋')"><span class="feed-emoji">🍦</span><span class="feed-name">冰淇淋</span></div>
+      <div class="feed-item" onclick="selectFood('🍩','甜甜圈')"><span class="feed-emoji">🍩</span><span class="feed-name">甜甜圈</span></div>
+      <div class="feed-item" onclick="selectFood('🍪','饼干')"><span class="feed-emoji">🍪</span><span class="feed-name">饼干</span></div>
+      <div class="feed-item" onclick="selectFood('🍫','巧克力')"><span class="feed-emoji">🍫</span><span class="feed-name">巧克力</span></div>
+      <div class="feed-item" onclick="selectFood('🍮','布丁')"><span class="feed-emoji">🍮</span><span class="feed-name">布丁</span></div>
+      <div class="feed-item" onclick="selectFood('🧁','杯子蛋糕')"><span class="feed-emoji">🧁</span><span class="feed-name">小蛋糕</span></div>
+      <div class="feed-item" onclick="selectFood('🍡','汤圆')"><span class="feed-emoji">🍡</span><span class="feed-name">汤圆</span></div>
+      <div class="feed-item" onclick="selectFood('🥧','派')"><span class="feed-emoji">🥧</span><span class="feed-name">苹果派</span></div>
+    </div>
+    <div class="feed-category">🍎 水果</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍎','苹果')"><span class="feed-emoji">🍎</span><span class="feed-name">苹果</span></div>
+      <div class="feed-item" onclick="selectFood('🍑','桃子')"><span class="feed-emoji">🍑</span><span class="feed-name">桃子</span></div>
+      <div class="feed-item" onclick="selectFood('🍇','葡萄')"><span class="feed-emoji">🍇</span><span class="feed-name">葡萄</span></div>
+      <div class="feed-item" onclick="selectFood('🍓','草莓')"><span class="feed-emoji">🍓</span><span class="feed-name">草莓</span></div>
+      <div class="feed-item" onclick="selectFood('🍉','西瓜')"><span class="feed-emoji">🍉</span><span class="feed-name">西瓜</span></div>
+      <div class="feed-item" onclick="selectFood('🍌','香蕉')"><span class="feed-emoji">🍌</span><span class="feed-name">香蕉</span></div>
+      <div class="feed-item" onclick="selectFood('🥭','芒果')"><span class="feed-emoji">🥭</span><span class="feed-name">芒果</span></div>
+      <div class="feed-item" onclick="selectFood('🍊','橘子')"><span class="feed-emoji">🍊</span><span class="feed-name">橘子</span></div>
+      <div class="feed-item" onclick="selectFood('🫐','蓝莓')"><span class="feed-emoji">🫐</span><span class="feed-name">蓝莓</span></div>
+    </div>
+    <div class="feed-category">🥤 饮品</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🧋','奶茶')"><span class="feed-emoji">🧋</span><span class="feed-name">奶茶</span></div>
+      <div class="feed-item" onclick="selectFood('☕','咖啡')"><span class="feed-emoji">☕</span><span class="feed-name">咖啡</span></div>
+      <div class="feed-item" onclick="selectFood('🥛','牛奶')"><span class="feed-emoji">🥛</span><span class="feed-name">牛奶</span></div>
+      <div class="feed-item" onclick="selectFood('🍵','茶')"><span class="feed-emoji">🍵</span><span class="feed-name">热茶</span></div>
+      <div class="feed-item" onclick="selectFood('🧃','果汁')"><span class="feed-emoji">🧃</span><span class="feed-name">果汁</span></div>
+      <div class="feed-item" onclick="selectFood('🥤','可乐')"><span class="feed-emoji">🥤</span><span class="feed-name">可乐</span></div>
+      <div class="feed-item" onclick="selectFood('🍺','啤酒')"><span class="feed-emoji">🍺</span><span class="feed-name">啤酒</span></div>
+      <div class="feed-item" onclick="selectFood('🍷','红酒')"><span class="feed-emoji">🍷</span><span class="feed-name">红酒</span></div>
+      <div class="feed-item" onclick="selectFood('🫖','花茶')"><span class="feed-emoji">🫖</span><span class="feed-name">花茶</span></div>
+    </div>
+    <div class="feed-category">🍿 零食</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍿','爆米花')"><span class="feed-emoji">🍿</span><span class="feed-name">爆米花</span></div>
+      <div class="feed-item" onclick="selectFood('🥜','坚果')"><span class="feed-emoji">🥜</span><span class="feed-name">坚果</span></div>
+      <div class="feed-item" onclick="selectFood('🧀','芝士')"><span class="feed-emoji">🧀</span><span class="feed-name">芝士</span></div>
+      <div class="feed-item" onclick="selectFood('🌽','玉米')"><span class="feed-emoji">🌽</span><span class="feed-name">烤玉米</span></div>
+      <div class="feed-item" onclick="selectFood('🍙','饭团')"><span class="feed-emoji">🍙</span><span class="feed-name">饭团</span></div>
+      <div class="feed-item" onclick="selectFood('🥨','椒盐卷饼')"><span class="feed-emoji">🥨</span><span class="feed-name">椒盐饼</span></div>
+    </div>
+    <div class="feed-category">🍟 快餐</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍟','薯条')"><span class="feed-emoji">🍟</span><span class="feed-name">薯条</span></div>
+      <div class="feed-item" onclick="selectFood('🍗','KFC炸鸡')"><span class="feed-emoji">🍗</span><span class="feed-name">KFC炸鸡</span></div>
+      <div class="feed-item" onclick="selectFood('🍔','巨无霸')"><span class="feed-emoji">🍔</span><span class="feed-name">巨无霸</span></div>
+      <div class="feed-item" onclick="selectFood('🌯','麦辣鸡腿堡')"><span class="feed-emoji">🌯</span><span class="feed-name">麦辣堡</span></div>
+      <div class="feed-item" onclick="selectFood('🥤','麦旋风')"><span class="feed-emoji">🥤</span><span class="feed-name">麦旋风</span></div>
+      <div class="feed-item" onclick="selectFood('🍦','甜筒')"><span class="feed-emoji">🍦</span><span class="feed-name">KFC甜筒</span></div>
+      <div class="feed-item" onclick="selectFood('🌮','墨西哥鸡肉卷')"><span class="feed-emoji">🌮</span><span class="feed-name">鸡肉卷</span></div>
+      <div class="feed-item" onclick="selectFood('🥞','麦满分')"><span class="feed-emoji">🥞</span><span class="feed-name">麦满分</span></div>
+      <div class="feed-item" onclick="selectFood('🍕','必胜客披萨')"><span class="feed-emoji">🍕</span><span class="feed-name">必胜客</span></div>
+    </div>
+    <div class="feed-category">🌶️ 川菜·湘菜</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🌶️','麻婆豆腐')"><span class="feed-emoji">🌶️</span><span class="feed-name">麻婆豆腐</span></div>
+      <div class="feed-item" onclick="selectFood('🐟','水煮鱼')"><span class="feed-emoji">🐟</span><span class="feed-name">水煮鱼</span></div>
+      <div class="feed-item" onclick="selectFood('🍖','回锅肉')"><span class="feed-emoji">🍖</span><span class="feed-name">回锅肉</span></div>
+      <div class="feed-item" onclick="selectFood('🫕','毛血旺')"><span class="feed-emoji">🫕</span><span class="feed-name">毛血旺</span></div>
+      <div class="feed-item" onclick="selectFood('🐔','辣子鸡')"><span class="feed-emoji">🐔</span><span class="feed-name">辣子鸡</span></div>
+      <div class="feed-item" onclick="selectFood('🥘','剁椒鱼头')"><span class="feed-emoji">🥘</span><span class="feed-name">剁椒鱼头</span></div>
+      <div class="feed-item" onclick="selectFood('🍲','酸菜鱼')"><span class="feed-emoji">🍲</span><span class="feed-name">酸菜鱼</span></div>
+      <div class="feed-item" onclick="selectFood('🥩','小炒黄牛肉')"><span class="feed-emoji">🥩</span><span class="feed-name">小炒牛肉</span></div>
+      <div class="feed-item" onclick="selectFood('🌶️','口水鸡')"><span class="feed-emoji">🌶️</span><span class="feed-name">口水鸡</span></div>
+    </div>
+    <div class="feed-category">🦆 粤菜·闽菜</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🦆','烧鹅')"><span class="feed-emoji">🦆</span><span class="feed-name">烧鹅</span></div>
+      <div class="feed-item" onclick="selectFood('🍤','白灼虾')"><span class="feed-emoji">🍤</span><span class="feed-name">白灼虾</span></div>
+      <div class="feed-item" onclick="selectFood('🥟','虾饺')"><span class="feed-emoji">🥟</span><span class="feed-name">虾饺</span></div>
+      <div class="feed-item" onclick="selectFood('🍲','佛跳墙')"><span class="feed-emoji">🍲</span><span class="feed-name">佛跳墙</span></div>
+      <div class="feed-item" onclick="selectFood('🐓','白切鸡')"><span class="feed-emoji">🐓</span><span class="feed-name">白切鸡</span></div>
+      <div class="feed-item" onclick="selectFood('🥘','煲仔饭')"><span class="feed-emoji">🥘</span><span class="feed-name">煲仔饭</span></div>
+      <div class="feed-item" onclick="selectFood('🧆','肠粉')"><span class="feed-emoji">🧆</span><span class="feed-name">肠粉</span></div>
+      <div class="feed-item" onclick="selectFood('🍜','云吞面')"><span class="feed-emoji">🍜</span><span class="feed-name">云吞面</span></div>
+      <div class="feed-item" onclick="selectFood('🥮','叉烧包')"><span class="feed-emoji">🥮</span><span class="feed-name">叉烧包</span></div>
+    </div>
+    <div class="feed-category">🍜 鲁菜·苏浙菜·徽菜</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🍖','糖醋排骨')"><span class="feed-emoji">🍖</span><span class="feed-name">糖醋排骨</span></div>
+      <div class="feed-item" onclick="selectFood('🐟','松鼠鳜鱼')"><span class="feed-emoji">🐟</span><span class="feed-name">松鼠鳜鱼</span></div>
+      <div class="feed-item" onclick="selectFood('🦐','龙井虾仁')"><span class="feed-emoji">🦐</span><span class="feed-name">龙井虾仁</span></div>
+      <div class="feed-item" onclick="selectFood('🥩','东坡肉')"><span class="feed-emoji">🥩</span><span class="feed-name">东坡肉</span></div>
+      <div class="feed-item" onclick="selectFood('🦀','大闸蟹')"><span class="feed-emoji">🦀</span><span class="feed-name">大闸蟹</span></div>
+      <div class="feed-item" onclick="selectFood('🍜','小笼包')"><span class="feed-emoji">🍜</span><span class="feed-name">小笼包</span></div>
+      <div class="feed-item" onclick="selectFood('🥘','臭鳜鱼')"><span class="feed-emoji">🥘</span><span class="feed-name">臭鳜鱼</span></div>
+      <div class="feed-item" onclick="selectFood('🍲','葱烧海参')"><span class="feed-emoji">🍲</span><span class="feed-name">葱烧海参</span></div>
+      <div class="feed-item" onclick="selectFood('🐔','叫花鸡')"><span class="feed-emoji">🐔</span><span class="feed-name">叫花鸡</span></div>
+    </div>
+    <div class="feed-category">🍢 北方菜·烧烤</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🥟','东北大饺子')"><span class="feed-emoji">🥟</span><span class="feed-name">东北饺子</span></div>
+      <div class="feed-item" onclick="selectFood('🍖','锅包肉')"><span class="feed-emoji">🍖</span><span class="feed-name">锅包肉</span></div>
+      <div class="feed-item" onclick="selectFood('🌯','烤冷面')"><span class="feed-emoji">🌯</span><span class="feed-name">烤冷面</span></div>
+      <div class="feed-item" onclick="selectFood('🍢','烤串')"><span class="feed-emoji">🍢</span><span class="feed-name">烤串</span></div>
+      <div class="feed-item" onclick="selectFood('🥩','烤羊排')"><span class="feed-emoji">🥩</span><span class="feed-name">烤羊排</span></div>
+      <div class="feed-item" onclick="selectFood('🫓','肉夹馍')"><span class="feed-emoji">🫓</span><span class="feed-name">肉夹馍</span></div>
+      <div class="feed-item" onclick="selectFood('🍜','兰州拉面')"><span class="feed-emoji">🍜</span><span class="feed-name">兰州拉面</span></div>
+      <div class="feed-item" onclick="selectFood('🍲','羊蝎子')"><span class="feed-emoji">🍲</span><span class="feed-name">羊蝎子</span></div>
+      <div class="feed-item" onclick="selectFood('🥘','北京烤鸭')"><span class="feed-emoji">🥘</span><span class="feed-name">北京烤鸭</span></div>
+    </div>
+    <div class="feed-category">💀 恶搞·黑暗料理</div>
+    <div class="feed-grid">
+      <div class="feed-item" onclick="selectFood('🐟','鲱鱼罐头（慎点！）')"><span class="feed-emoji">🐟</span><span class="feed-name">鲱鱼罐头</span></div>
+      <div class="feed-item" onclick="selectFood('🦑','臭豆腐')"><span class="feed-emoji">🦑</span><span class="feed-name">臭豆腐</span></div>
+      <div class="feed-item" onclick="selectFood('🥚','皮蛋')"><span class="feed-emoji">🥚</span><span class="feed-name">皮蛋</span></div>
+      <div class="feed-item" onclick="selectFood('🫙','螺蛳粉')"><span class="feed-emoji">🫙</span><span class="feed-name">螺蛳粉</span></div>
+      <div class="feed-item" onclick="selectFood('🧄','生蒜瓣')"><span class="feed-emoji">🧄</span><span class="feed-name">生蒜瓣</span></div>
+      <div class="feed-item" onclick="selectFood('🌶️','死神辣椒')"><span class="feed-emoji">🌶️</span><span class="feed-name">死神辣椒</span></div>
+      <div class="feed-item" onclick="selectFood('🍋','纯柠檬')"><span class="feed-emoji">🍋</span><span class="feed-name">纯吃柠檬</span></div>
+      <div class="feed-item" onclick="selectFood('🧊','芥末团')"><span class="feed-emoji">🧊</span><span class="feed-name">芥末团</span></div>
+      <div class="feed-item" onclick="selectFood('🫘','纳豆')"><span class="feed-emoji">🫘</span><span class="feed-name">纳豆</span></div>
+      <div class="feed-item" onclick="selectFood('🥫','仰望星空派')"><span class="feed-emoji">🥫</span><span class="feed-name">仰望星空</span></div>
+      <div class="feed-item" onclick="selectFood('🍕','折耳根')"><span class="feed-emoji">🍕</span><span class="feed-name">折耳根</span></div>
+      <div class="feed-item" onclick="selectFood('🐛','炸昆虫')"><span class="feed-emoji">🐛</span><span class="feed-name">炸昆虫</span></div>
+    </div>
+  </div>
+  <div id="feedInputBar" class="feed-input-bar" style="display:none">
+    <div class="feed-selected-preview">
+      <span class="feed-sel-emoji" id="feedSelEmoji"></span>
+      <span class="feed-sel-name" id="feedSelName"></span>
+      <button class="feed-sel-clear" onclick="clearFeedSelection()">✕</button>
+    </div>
+    <div class="feed-input-row">
+      <input type="text" id="feedTextInput" placeholder="说点什么...（可选）" onkeydown="if(event.key==='Enter')sendFeedWithText()" />
+      <button onclick="sendFeedWithText()">喂！</button>
+    </div>
+  </div>
+</div>
+
+<!-- Roleplay Setup Modal -->
+<div id="rpModal" class="rp-modal" onclick="if(event.target===this)closeRpModal()">
+  <div class="rp-modal-content">
+    <div class="rp-modal-header">
+      <h3>🎭 角色扮演</h3>
+      <button class="rp-modal-close" onclick="closeRpModal()">✕</button>
+    </div>
+    <div class="rp-section-label">选择存档（点击已有存档可直接继续）</div>
+    <div class="rp-slots-grid" id="rpSlotsGrid"></div>
+    <div id="rpSetupFields">
+      <div class="rp-field"><label>ta的人设</label><textarea id="rpBotChar" rows="3" placeholder="角色性格、背景、外貌等..."></textarea></div>
+      <div class="rp-field"><label>你的人设</label><textarea id="rpUserChar" rows="3" placeholder="你的角色设定..."></textarea></div>
+      <div class="rp-field"><label>前情提要</label><textarea id="rpBackstory" rows="3" placeholder="故事背景和开场情境..."></textarea></div>
+      <div class="rp-field"><label>目前剧情你们是否认识</label>
+        <select id="rpRelationship"><option value="不认识">不认识</option><option value="认识">认识</option><option value="暧昧关系">暧昧关系</option><option value="恋人">恋人</option><option value="敌人">敌人</option><option value="同事">同事</option><option value="陌生人">陌生人</option></select>
+      </div>
+      <button class="rp-start-btn" id="rpStartBtn" onclick="startRoleplay()">开始角色扮演</button>
+    </div>
+  </div>
+</div>
+<!-- Roleplay Save Modal -->
+<div id="rpSaveModal" class="rp-modal" onclick="if(event.target===this)closeRpSaveModal()">
+  <div class="rp-modal-content" style="max-width:400px">
+    <div class="rp-modal-header"><h3>💾 是否存档？</h3><button class="rp-modal-close" onclick="closeRpSaveModal()">✕</button></div>
+    <div class="rp-section-label">选择存档位保存当前剧情进度</div>
+    <div class="rp-slots-grid" id="rpSaveSlotsGrid"></div>
+    <div id="rpSaveStatus" style="text-align:center;display:none;padding:16px;color:var(--text-secondary);font-size:13px"></div>
+    <button class="rp-save-btn" style="width:100%;margin-top:6px" onclick="exitRpWithoutSave()">不存档，直接退出</button>
+  </div>
+</div>
+
+<!-- Dress-up Panel -->
+<div id="dressupOverlay" class="dressup-overlay" onclick="toggleDressupPanel()"></div>
+<div id="dressupPanel" class="dressup-panel">
+  <div class="dressup-panel-header">
+    <h3>👔 更衣间</h3>
+    <button class="dressup-panel-close" onclick="toggleDressupPanel()">✕</button>
+  </div>
+  <div class="dressup-panel-body">
+    <div class="dressup-current">
+      <div class="dressup-icon" id="dressupIcon">👕</div>
+      <div class="dressup-label">当前穿搭</div>
+      <div class="dressup-status" id="dressupStatus">默认穿搭</div>
+    </div>
+    <div class="dressup-option" onclick="sendDefaultOutfit()">
+      <div class="dressup-opt-icon">🔄</div>
+      <div class="dressup-opt-info">
+        <div class="dressup-opt-title">恢复默认穿搭</div>
+        <div class="dressup-opt-desc">让【角色称呼代词，如：他/她】换回日常衣服</div>
+      </div>
+    </div>
+    <div class="dressup-option" onclick="document.getElementById('dressupFileInput').click()">
+      <div class="dressup-opt-icon">📷</div>
+      <div class="dressup-opt-info">
+        <div class="dressup-opt-title">上传衣服图片</div>
+        <div class="dressup-opt-desc">给【角色称呼代词】一件衣服，看【角色称呼代词】穿不穿</div>
+      </div>
+    </div>
+    <input type="file" id="dressupFileInput" accept="image/*" style="display:none" onchange="handleDressupImage(event)" />
+    <div class="dressup-preview" id="dressupPreview">
+      <img id="dressupPreviewImg" src="" />
+      <div class="dressup-preview-row">
+        <input type="text" id="dressupText" placeholder="说点什么...（可选）" onkeydown="if(event.key==='Enter')sendDressupOutfit()" />
+        <button onclick="sendDressupOutfit()">递给【角色称呼代词】！</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Diary Panel -->
+<div id="diaryOverlay" class="diary-overlay" onclick="toggleDiaryPanel()"></div>
+<div id="diaryPanel" class="diary-panel">
+  <!-- List View -->
+  <div id="diaryListView" class="diary-list-view">
+    <div class="diary-panel-header">
+      <h3>📔 【角色称呼代词】的日记</h3>
+      <button class="diary-panel-close" onclick="toggleDiaryPanel()">✕</button>
+    </div>
+    <div class="diary-breadcrumb" id="diaryBreadcrumb" style="display:none"></div>
+    <div class="diary-panel-scroll" id="diaryListScroll">
+      <div class="diary-empty" id="diaryEmpty">
+        还没有日记哦～<br>
+        【角色称呼代词】每天晚上 20:00 会写当天的日记<br>
+        <span style="font-size:11px;color:var(--text-dim);margin-top:8px;display:block">📁 需要先连接记忆库</span>
+      </div>
+      <div id="diaryList"></div>
+    </div>
+  </div>
+  <!-- Detail View -->
+  <div id="diaryDetailView" class="diary-detail-view">
+    <div class="diary-detail-header">
+      <button class="diary-detail-back" onclick="showDiaryList()">←</button>
+      <span class="diary-detail-title" id="diaryDetailTitle"></span>
+    </div>
+    <div class="diary-detail-body" id="diaryDetailBody"></div>
+  </div>
+  <!-- Generating State -->
+  <div class="diary-generating" id="diaryGenerating" style="display:none">
+    <div class="diary-gen-icon">✍️</div>
+    <div class="diary-gen-text" id="diaryGenText">正在写日记...</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-dim)" id="diaryGenDetail">整理今天发生的事情</div>
+  </div>
+</div>
+
+<!-- Period Calendar -->
+<div id="periodOverlay" class="period-overlay" onclick="togglePeriodPanel()"></div>
+<div id="periodPanel" class="period-panel">
+  <div class="period-panel-header">
+    <h3>🩸 经期日历</h3>
+    <button class="period-panel-close" onclick="togglePeriodPanel()">✕</button>
+  </div>
+  <div class="period-panel-tabs">
+    <button class="period-tab active" onclick="switchPeriodTab('calendar')">📅 日历</button>
+    <button class="period-tab" onclick="switchPeriodTab('records')">📊 记录</button>
+    <button class="period-tab" onclick="switchPeriodTab('meds')">💊 用药</button>
+    <button class="period-tab" onclick="switchPeriodTab('settings')">⚙️ 设置</button>
+  </div>
+  <div class="period-panel-body" id="periodPanelBody"></div>
+</div>
+<!-- Period Day Detail Modal -->
+<div class="period-day-modal" id="periodDayModal" onclick="if(event.target===this)closePeriodDayModal()">
+  <div class="period-day-content" id="periodDayContent"></div>
+</div>
+
+<!-- Music Panel -->
+<div id="musicOverlay" class="music-overlay" onclick="toggleMusicPanel()"></div>
+<div id="musicPanel" class="music-panel">
+  <div class="music-panel-header">
+    <h3>🎵 一起听</h3>
+    <button class="music-panel-close" onclick="toggleMusicPanel()">✕</button>
+  </div>
+  <div class="music-panel-body" id="musicPanelBody"></div>
+</div>
+
+<!-- Features Sidebar -->
+<div id="featuresOverlay" class="features-overlay" onclick="toggleFeaturesSidebar()"></div>
+<div id="featuresSidebar" class="features-sidebar">
+  <div class="features-sidebar-header">
+    <h3>📋 功能</h3>
+    <button class="features-sidebar-close" onclick="toggleFeaturesSidebar()">✕</button>
+  </div>
+  <div class="features-list">
+    <div class="feature-item" onclick="toggleFeaturesSidebar();toggleFeedPanel()">
+      <span class="fi-icon">🍴</span>
+      <div class="fi-info"><div class="fi-name">喂食</div><div class="fi-desc">给【角色称呼代词】做好吃的</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();toggleDressupPanel()">
+      <span class="fi-icon">👔</span>
+      <div class="fi-info"><div class="fi-name">换装</div><div class="fi-desc">帮【角色称呼代词】搭配穿搭</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();toggleDiaryPanel()">
+      <span class="fi-icon">📔</span>
+      <div class="fi-info"><div class="fi-name">日记</div><div class="fi-desc">【角色名称】 的每日日记</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();togglePeriodPanel()">
+      <span class="fi-icon">🩸</span>
+      <div class="fi-info"><div class="fi-name">经期日历</div><div class="fi-desc">周期记录与健康打卡</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();toggleMusicPanel()">
+      <span class="fi-icon">🎵</span>
+      <div class="fi-info"><div class="fi-name">一起听</div><div class="fi-desc">和【角色称呼代词】一起听歌</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();toggleGamePanel()">
+      <span class="fi-icon">🎮</span>
+      <div class="fi-info"><div class="fi-name">小游戏</div><div class="fi-desc">海龟汤、真心话大冒险…</div></div>
+    </div>
+    <div class="feature-item" onclick="toggleFeaturesSidebar();openRpModal()">
+      <span class="fi-icon">🎭</span>
+      <div class="fi-info"><div class="fi-name">角色扮演</div><div class="fi-desc">沉浸式剧情体验</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="memoryLoadingOverlay" style="display:none">
+  <div class="loader-icon">🧠</div>
+  <div class="loader-text" id="loaderText">正在连接记忆库...</div>
+  <div class="progress-track"><div class="progress-bar" id="loaderBar"></div></div>
+  <div class="loader-detail" id="loaderDetail"></div>
+</div>
+
+<!-- Setup -->
+<div class="setup-overlay" id="setup">
+  <div class="setup-card">
+    <div style="font-size:36px;margin-bottom:16px">🎙️</div>
+    <h2>【应用标题】</h2>
+    <p>输入 API Key 就可以开始聊天<br>Key 只保存在你的浏览器本地</p>
+
+    <label>Anthropic API Key</label>
+    <input type="password" id="claudeKey" placeholder="sk-ant-..." />
+
+    <label>ElevenLabs API Key</label>
+    <input type="password" id="elevenKey" placeholder="sk_..." />
+
+    <label>OpenAI API Key <span style="color:#666">（语音转文字 + 语音通话）</span></label>
+    <input type="password" id="openaiKey" placeholder="sk-...  有了才能识别语音" />
+    <div id="sttHint" style="font-size:11px;margin-top:6px;line-height:1.6;color:#666">
+      <span id="sttStatus"></span><br>
+      <span style="color:#4a8">✓ 没有 Key 也能：</span>录语音、听语音<br>
+      <span style="color:#c4956a">★ 有 Key 才能：</span>语音转文字、语音通话、语音发消息
+    </div>
+
+    <label>Google AI API Key <span style="color:#666">（长期记忆 embedding，免费）</span></label>
+    <input type="password" id="googleKey" placeholder="AIza...  有了才有语义记忆搜索" />
+    <div style="font-size:11px;margin-top:6px;line-height:1.6;color:#666">
+      <span id="memoryStatus">🟡 <span style="color:#c4956a">未填写时仍可聊天，但没有跨对话的长期语义记忆</span></span><br>
+      <span style="color:#4a8">✓ 有 Key 才能：</span>自动记住重要事实、语义搜索回忆、智能浮现记忆
+    </div>
+
+    <div class="remember-row">
+      <input type="checkbox" id="rememberKeys" checked />
+      <label for="rememberKeys">记住 Key（下次打开不用重填）</label>
+    </div>
+
+    <button id="startBtn" onclick="startChat()" disabled>开始聊天</button>
+
+    <div class="setup-hint">
+      Anthropic → <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><br>
+      ElevenLabs → <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io</a><br>
+      <span style="color:#555">OpenAI（选填）→ <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></span><br>
+      <span style="color:#555">Google AI（选填，免费）→ <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Chat UI -->
+<div class="header">
+  <div class="avatar" id="headerAvatar" onclick="openAvatarEditor()">♡</div>
+  <div>
+    <div class="header-name" id="headerName" onclick="openAvatarEditor()">【角色默认显示名称】</div>
+    <div class="header-status" id="statusBar">等待连接...</div>
+  </div>
+
+<!-- Avatar Editor Popup -->
+<div class="avatar-editor" id="avatarEditor" onclick="if(event.target===this)closeAvatarEditor()">
+  <div class="avatar-editor-card">
+    <h3>自定义头像和名称</h3>
+    <div class="avatar-preview-lg" id="avatarPreview">♡</div>
+    <div class="avatar-btns" style="margin-bottom:14px">
+      <button onclick="document.getElementById('avatarFileInput').click()">📷 上传头像</button>
+      <button onclick="resetAvatar()">↩️ 恢复默认</button>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
+    </div>
+    <label>名称（备注）</label>
+    <input type="text" id="avatarNameInput" placeholder="【角色默认显示名称】" />
+    <div class="avatar-btns">
+      <button class="primary" onclick="saveAvatarSettings()">保存</button>
+      <button onclick="closeAvatarEditor()">取消</button>
+    </div>
+  </div>
+</div>
+  <div class="header-right">
+    <button class="call-header-btn" id="callBtn" onclick="toggleCall()" disabled>📞 通话</button>
+    <button class="header-btn" id="peekBtn" onclick="toggleScreenPeek()" style="font-size:10px">👀 视监:关</button>
+    <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Opus（更聪明，更贵）&#10;点击切换到 Sonnet">🧠 Opus</button>
+    <button class="header-btn" id="webSearchBtn" onclick="toggleWebSearch()" style="font-size:10px">🔍 联网:关</button>
+    <button class="header-btn" id="featuresBtn" onclick="toggleFeaturesSidebar()" style="font-size:10px">📋 更多</button>
+    <button class="header-btn" onclick="toggleSearchBar()" style="font-size:10px">🔎 搜索</button>
+    <button class="header-btn" id="proactiveBtn" onclick="toggleProactive()" style="font-size:10px">💬 主动消息:开</button>
+    <button class="header-btn" id="memoryBtn" onclick="setupMemoryLib()" style="font-size:10px">📁 记忆库</button>
+    <button class="header-btn" onclick="clearChat()">清空记录</button>
+    <button class="header-btn" id="themeBtn" onclick="toggleThemePicker()" style="font-size:10px">🎨 主题</button>
+    <button class="header-btn danger" onclick="logout()">退出</button>
+  </div>
+</div>
+
+<!-- Theme Picker -->
+<div class="theme-picker" id="themePicker">
+  <div class="theme-picker-title">选择主题颜色</div>
+  <div class="theme-grid">
+    <div class="theme-item" onclick="setTheme('default')">
+      <div class="theme-dot" id="dot-default" style="background:linear-gradient(135deg,#c4956a,#a87c5a)"></div>
+      <div class="theme-dot-label">暖棕</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('redblue')">
+      <div class="theme-dot" id="dot-redblue" style="background:linear-gradient(135deg,#c85a5a,#4a5a90)"></div>
+      <div class="theme-dot-label">赤蓝</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('sakura')">
+      <div class="theme-dot" id="dot-sakura" style="background:linear-gradient(135deg,#fdf2f4,#f0c8d0);border:1px solid #e0b0b8"></div>
+      <div class="theme-dot-label">樱花</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('mint')">
+      <div class="theme-dot" id="dot-mint" style="background:linear-gradient(135deg,#f0f8f4,#c0dcc8);border:1px solid #a0c8b0"></div>
+      <div class="theme-dot-label">薄荷</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('sky')">
+      <div class="theme-dot" id="dot-sky" style="background:linear-gradient(135deg,#f0f5fb,#c0d0e8);border:1px solid #a0b8d8"></div>
+      <div class="theme-dot-label">天空</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('lavender')">
+      <div class="theme-dot" id="dot-lavender" style="background:linear-gradient(135deg,#f4f0fa,#d0c4e4);border:1px solid #b8a8d0"></div>
+      <div class="theme-dot-label">薰衣草</div>
+    </div>
+    <div class="theme-item" onclick="setTheme('milktea')">
+      <div class="theme-dot" id="dot-milktea" style="background:linear-gradient(135deg,#f8f4f0,#e0d0c0);border:1px solid #c8b8a4"></div>
+      <div class="theme-dot-label">奶茶</div>
+    </div>
+  </div>
+</div>
+
+<div class="game-banner" id="gameBanner">
+  <span class="game-banner-text" id="gameBannerText"></span>
+  <button onclick="gameAction()">操作</button>
+  <button class="danger" onclick="endGame()">结束</button>
+</div>
+<div id="rpBanner" class="rp-banner">
+  <div class="rp-banner-info">
+    <span>🎭 角色扮演中</span>
+    <span class="rp-banner-chars" id="rpBannerChars"></span>
+  </div>
+  <button onclick="stopRoleplay()">停止扮演</button>
+</div>
+<!-- Mini Music Player (top position) -->
+<div class="mini-player" id="miniPlayer">
+  <span class="mp-art" onclick="toggleMusicPanel()">🎵</span>
+  <div class="mp-info">
+    <div class="mp-title" id="mpTitle">未播放</div>
+    <div class="mp-progress-wrap" onclick="seekMusic(event)"><div class="mp-progress-bar" id="mpProgress"></div></div>
+    <div class="mp-time" id="mpTime">0:00 / 0:00</div>
+  </div>
+  <button class="mp-btn" onclick="musicPrev()">⏮</button>
+  <button class="mp-btn mp-play" id="mpPlayBtn" onclick="musicTogglePlay()">▶</button>
+  <button class="mp-btn" onclick="musicNext()">⏭</button>
+  <button class="mp-btn" id="mpModeBtn" onclick="musicCycleMode()" title="播放模式">🔁</button>
+  <input type="range" class="mp-vol" id="mpVol" min="0" max="100" value="80" oninput="setMusicVolume(this.value)" title="音乐音量" />
+  <button class="mp-btn" onclick="stopMusic()" title="停止播放" style="font-size:14px;color:var(--text-dim)">✕</button>
+</div>
+<div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0">
+<div id="searchBar" class="search-bar">
+  <div class="search-bar-row">
+    <input type="text" id="searchInput" placeholder="搜索历史消息..." oninput="onSearchInput()" onkeydown="if(event.key==='Enter')onSearchInput()" />
+    <button class="search-bar-close" onclick="toggleSearchBar()">✕</button>
+  </div>
+  <div class="search-results" id="searchResults"></div>
+</div>
+<div class="chat-area" id="chatArea">
+  <div class="empty-state" id="emptyState">
+    <span>💬</span>
+    <div>说点什么吧，我在听</div>
+  </div>
+</div>
+<button class="jump-back-btn" id="jumpBackBtn" onclick="jumpBackToLatest()">↓ 回到最新</button>
+</div>
+<div class="img-preview-bar" id="imgPreviewBar" style="display:none">
+  <img id="imgPreviewThumb" src="" />
+  <span class="preview-hint">可以输入文字一起发送，也可以直接点发送</span>
+  <button class="remove-img" onclick="clearImagePreview()">✕</button>
+</div>
+<div class="img-preview-bar" id="filePreviewBar" style="display:none">
+  <span style="font-size:20px">📄</span>
+  <span class="preview-hint" id="filePreviewName">文件名</span>
+  <button class="remove-img" onclick="clearFilePreview()">✕</button>
+</div>
+
+<!-- Reply preview -->
+<div class="reply-preview-bar" id="replyPreviewBar" style="display:none">
+  <span class="reply-indicator">↩️</span>
+  <div class="reply-content" id="replyPreviewContent"></div>
+  <button class="reply-close" onclick="clearReply()">✕</button>
+</div>
+
+<!-- Multi-message staging area -->
+<div class="staged-bar" id="stagedBar" style="display:none">
+  <div class="staged-bar-header">
+    <span>📝 待发送消息 (<span class="staged-count" id="stagedCount">0</span>)</span>
+    <span style="font-size:10px;color:var(--text-dim)">继续输入或点「发送全部」</span>
+  </div>
+  <div class="staged-msg-list" id="stagedMsgList"></div>
+  <button class="done-btn" id="doneBtn" onclick="sendAllStaged()">发送全部 ✓</button>
+</div>
+<div class="sticker-picker" id="stickerPicker">
+  <div class="sticker-picker-header">
+    <span>表情包</span>
+    <button onclick="toggleStickerPicker()" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer">✕</button>
+  </div>
+  <div class="sticker-grid" id="stickerGrid"></div>
+  <div class="sticker-empty" id="stickerEmpty" style="display:none">
+    还没有表情包哦～<br>在记忆库文件夹里建一个 stickers 文件夹，把表情包图片放进去就好
+  </div>
+</div>
+<div class="input-area" id="inputArea">
+  <button class="input-mode-btn" id="batchModeBtn" onclick="toggleBatchMode()" title="连续发送模式" style="font-size:15px">📌</button>
+  <button class="input-mode-btn" id="modeBtn" onclick="toggleInputMode()" disabled>🎤</button>
+  <input class="chat-input" id="chatInput" placeholder="跟我说话..." disabled
+         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+         onpaste="handlePaste(event)" />
+  <div class="hold-to-talk" id="holdToTalk" style="display:none"
+       onmousedown="startVoiceRecord(event)" onmouseup="stopVoiceRecord()"
+       onmouseleave="cancelVoiceCheck()"
+       ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()"
+       ontouchcancel="cancelVoiceCheck()">按住 说话</div>
+  <div id="voiceAutoPlayToggle" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-dim);cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);white-space:nowrap;user-select:none;z-index:2" onclick="toggleVoiceAutoPlay()">🔇 自动播放:关</div>
+  <button class="input-mode-btn" id="stickerPickerBtn" onclick="toggleStickerPicker()" title="表情包">😊</button>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>发送</button>
+  <div class="attach-wrapper">
+    <button class="input-mode-btn" id="attachBtn" onclick="toggleAttachMenu()" title="发图片/文件">＋</button>
+    <div class="attach-menu" id="attachMenu">
+      <button onclick="pickImage()">🖼️ 图片</button>
+      <button onclick="pickFile()">📎 文件</button>
+    </div>
+  </div>
+  <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageFile(event)" />
+  <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)" />
+</div>
+
+<div class="recording-hint" id="recordingHint">
+  <div class="rec-dot"></div>
+  <div class="rec-time" id="recTime">0:00</div>
+  <div style="font-size:13px;color:#aaa">松手发送，上滑取消</div>
+</div>
+
+<!-- Call Overlay -->
+<div class="call-overlay hidden" id="callOverlay">
+  <div class="call-avatar" id="callAvatar">♡</div>
+  <div class="call-name" id="callName">【角色默认显示名称】</div>
+  <div class="call-status" id="callStatus">连接中...</div>
+  <div class="call-timer" id="callTimer">00:00</div>
+  <div class="call-transcript" id="callTranscript"></div>
+  <button class="call-end-btn" onclick="endCall()">📞</button>
+  <div class="call-subtitle" id="callSubtitle"></div>
+</div>
+
+
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/memory.js"></script>
+<script src="js/sticker.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/game.js"></script>
+<script src="js/diary.js"></script>
+<script src="js/music.js"></script>
+<script src="js/roleplay.js"></script>
+<script src="js/period.js"></script>
+<script src="js/dressup.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/search.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
