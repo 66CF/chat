@@ -139,7 +139,7 @@ async function sendUserSticker(sticker) {
   chatMessages.push({ role: "user", text: `[表情包:${sticker.name}]`, isSticker: true, stickerName: sticker.name, stickerDataUrl, time: ts });
   saveChatHistory();
 
-  // Send to Claude as text description
+  // Send to DeepSeek as text description
   const stickerMsg = `[【用户称呼代词】发了一个表情包：${sticker.name}]`;
 
   // Build system prompt BEFORE pushing to history
@@ -148,34 +148,17 @@ async function sendUserSticker(sticker) {
   conversationHistory.push({ role: "user", content: stickerMsg });
   imprintLogTurn("user", stickerMsg);
 
-  // Get Claude's response
+  // Get DeepSeek's response
   setLoading(true);
   document.getElementById("statusBar").textContent = "正在思考...";
 
   try {
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 500,
-        ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 500
     });
-
-    if (!claudeRes.ok) {
-      const et = await claudeRes.text().catch(()=>"");
-      throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-    }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

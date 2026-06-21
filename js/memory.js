@@ -117,27 +117,14 @@ const ImprintMemory = {
     }).join("\n");
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: "claude-sonnet-4-6", max_tokens: 300,
-          system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
+      const raw = await callDeepSeekAPI({
+        system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
 回复严格JSON格式，不要其他内容：
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
 importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件给0.8+，普通闲聊给0.3-0.5。`,
-          messages: [{ role: "user", content: transcript }]
-        })
+        messages: [{ role: "user", content: transcript }],
+        max_tokens: 300
       });
-
-      if (!res.ok) { this.turnBuffer.unshift(...batch); return; }
-      const data = await res.json();
-      const raw = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
 
@@ -364,7 +351,7 @@ importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件
     if (rawResults.length > 0) {
       const contextCutoff = Math.max(0, conversationHistory.length - 20);
       // Only add raw results that aren't redundant with chunk results
-      // and aren't within the recent context window Claude already sees
+      // and aren't within the recent context window DeepSeek already sees
       const rawLines = rawResults
         .filter(r => r.index < contextCutoff)
         .map(r => `[原文] ${r.text}`);
@@ -612,7 +599,7 @@ let memoryEnabled = false;
 
 // === Retro-import existing conversation history into Imprint Memory ===
 async function retroImportHistory() {
-  if (!claudeApiKey) { alert("需要先登录（Anthropic API Key）"); return; }
+  if (!claudeApiKey) { alert("需要先登录（DeepSeek API Key）"); return; }
 
   // Collect all text messages from conversationHistory
   const textMsgs = conversationHistory.filter(m =>
@@ -634,7 +621,7 @@ async function retroImportHistory() {
     `将生成约 ${totalChunks} 条记忆摘要\n` +
     `语义向量: ${hasGoogle ? "✅ 会生成（已填 Google Key）" : "❌ 不会生成（未填 Google Key）"}\n\n` +
     `预计耗时: ${totalChunks * 3}-${totalChunks * 5} 秒\n` +
-    `（会调用 Claude API 生成摘要${hasGoogle ? " + Google API 生成向量" : ""}）\n\n` +
+    `（会调用 DeepSeek API 生成摘要${hasGoogle ? " + Google API 生成向量" : ""}）\n\n` +
     `确定开始？`
   );
   if (!doIt) return;
@@ -662,27 +649,14 @@ async function retroImportHistory() {
     }).join("\n");
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: "claude-sonnet-4-6", max_tokens: 300,
-          system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
+      const raw = await callDeepSeekAPI({
+        system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
 回复严格JSON格式，不要其他内容：
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
 importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件给0.8+，普通闲聊给0.3-0.5。`,
-          messages: [{ role: "user", content: transcript }]
-        })
+        messages: [{ role: "user", content: transcript }],
+        max_tokens: 300
       });
-
-      if (!res.ok) { errors++; continue; }
-      const data = await res.json();
-      const raw = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
 
@@ -1229,9 +1203,9 @@ async function loadSettingsFromMemory() {
       chatModel = settings.chatModel;
       const mBtn = document.getElementById("modelBtn");
       if (mBtn) {
-        const isOpus = chatModel === "claude-opus-4-6";
-        mBtn.textContent = isOpus ? "🧠 Opus" : "⚡ Sonnet";
-        mBtn.title = isOpus ? "当前: Opus（更聪明，更贵）\n点击切换到 Sonnet" : "当前: Sonnet（更快，更省）\n点击切换到 Opus";
+        const isOpus = chatModel === "deepseek-v4-pro";
+        mBtn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
+        mBtn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
       }
     }
     if (settings.keys) {
@@ -1360,9 +1334,9 @@ async function loadSettingsFromMemory() {
       chatModel = settings.chatModel;
       const mBtn = document.getElementById("modelBtn");
       if (mBtn) {
-        const isOpus = chatModel === "claude-opus-4-6";
-        mBtn.textContent = isOpus ? "🧠 Opus" : "⚡ Sonnet";
-        mBtn.title = isOpus ? "当前: Opus（更聪明，更贵）\n点击切换到 Sonnet" : "当前: Sonnet（更快，更省）\n点击切换到 Opus";
+        const isOpus = chatModel === "deepseek-v4-pro";
+        mBtn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
+        mBtn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
       }
     }
     if (settings.keys) {

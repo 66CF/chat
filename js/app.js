@@ -49,7 +49,7 @@ async function startChat() {
     const savedWebSearch = localStorage.getItem("vbc_websearch");
     webSearchEnabled = savedWebSearch === "1"; // default off
     const savedModel = localStorage.getItem("vbc_model");
-    if (savedModel === "claude-sonnet-4-6" || savedModel === "claude-opus-4-6") chatModel = savedModel;
+    if (savedModel === "deepseek-v4-flash" || savedModel === "deepseek-v4-pro") chatModel = savedModel;
   }
   const pBtn = document.getElementById("proactiveBtn");
   pBtn.textContent = proactiveEnabled ? "💬 主动消息:开" : "💬 主动消息:关";
@@ -64,9 +64,9 @@ async function startChat() {
 
   // Restore model toggle
   const mBtn = document.getElementById("modelBtn");
-  const isOpus = chatModel === "claude-opus-4-6";
-  mBtn.textContent = isOpus ? "🧠 Opus" : "⚡ Sonnet";
-  mBtn.title = isOpus ? "当前: Opus（更聪明，更贵）\n点击切换到 Sonnet" : "当前: Sonnet（更快，更省）\n点击切换到 Opus";
+  const isOpus = chatModel === "deepseek-v4-pro";
+  mBtn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
+  mBtn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
 
   // Restore chat messages (memory library > localStorage)
   // Load chat history from memory library
@@ -259,24 +259,11 @@ async function sendProactiveMessage() {
       { role: "user", content: prompt }
     ];
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 500,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: SYSTEM_PROMPT + recallBlock, messages: reqMsgs
-      })
+    const rawText = await callDeepSeekAPI({
+      system: SYSTEM_PROMPT + recallBlock,
+      messages: reqMsgs,
+      max_tokens: 500
     });
-
-    if (!claudeRes.ok) { const _e = await claudeRes.text().catch(()=>""); throw new Error("API error (" + claudeRes.status + "): " + _e.slice(0, 200)); }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
     const clean = (rawText || "").replace(/```json|```/g, "").trim();
 
     // Parse: can be array or single object, extract "wait" from last element
@@ -319,14 +306,14 @@ async function sendProactiveMessage() {
     try {
       if (Notification.permission === "granted" && document.hidden) {
         const lastMsg = messages[messages.length - 1];
-        new Notification("Claude 💕", {
+        new Notification("DeepSeek 💕", {
           body: cleanTags(lastMsg.chinese),
           icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💕</text></svg>"
         });
       }
     } catch(e) {}
 
-    // Schedule next based on Claude's decision
+    // Schedule next based on DeepSeek's decision
     proactiveSending = false;
     if (proactiveEnabled && waitMinutes >= 0) {
       scheduleProactiveMessage(waitMinutes);
@@ -367,19 +354,19 @@ let screenVideo = null;
 let peekEnabled = false;
 
 // === Model Switcher ===
-let chatModel = "claude-opus-4-6";
+let chatModel = "deepseek-v4-flash";
 function toggleModel() {
-  if (chatModel === "claude-opus-4-6") {
-    chatModel = "claude-sonnet-4-6";
+  if (chatModel === "deepseek-v4-flash") {
+    chatModel = "deepseek-v4-pro";
   } else {
-    chatModel = "claude-opus-4-6";
+    chatModel = "deepseek-v4-flash";
   }
   const btn = document.getElementById("modelBtn");
-  const isOpus = chatModel === "claude-opus-4-6";
-  btn.textContent = isOpus ? "🧠 Opus" : "⚡ Sonnet";
+  const isOpus = chatModel === "deepseek-v4-pro";
+  btn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
   btn.style.opacity = "1";
-  btn.title = isOpus ? "当前: Opus（更聪明，更贵）\n点击切换到 Sonnet" : "当前: Sonnet（更快，更省）\n点击切换到 Opus";
-  document.getElementById("statusBar").textContent = isOpus ? "🧠 已切换到 Opus 模型（更强，费用更高）" : "⚡ 已切换到 Sonnet 模型（更快，费用更低）";
+  btn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  document.getElementById("statusBar").textContent = isOpus ? "🧠 已切换到 Pro 模型（更强）" : "⚡ 已切换到 Flash 模型（更快）";
   saveSettingsToMemory();
   localStorage.setItem("vbc_model", chatModel);
 }
@@ -395,7 +382,7 @@ function toggleWebSearch() {
   localStorage.setItem("vbc_websearch", webSearchEnabled ? "1" : "0");
 }
 
-// Web search tool definition for Claude API
+// Web search tool definition (DeepSeek 不支持内置联网搜索，此功能已禁用)
 function getWebSearchTool() {
   if (!webSearchEnabled) return [];
   return [{ type: "web_search_20250305", name: "web_search" }];
@@ -524,25 +511,12 @@ async function peekAndReact(userAsked) {
       }
     ];
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 500,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: await buildSystemWithRecall("看屏幕"), messages: apiMsgs
-      })
+    const rawText = await callDeepSeekAPI({
+      system: await buildSystemWithRecall("看屏幕"),
+      messages: apiMsgs,
+      max_tokens: 500
     });
-
-    if (!res.ok) { const _e = await res.text().catch(()=>""); throw new Error("API error (" + res.status + "): " + _e.slice(0, 200)); }
-    const data = await res.json();
-    const rawText = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

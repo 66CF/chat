@@ -125,24 +125,11 @@ Respond in this EXACT JSON format (no other text):
 Keep puzzle under 100 characters, answer under 200 characters. Be creative!`;
     }
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: "claude-sonnet-4-6", max_tokens: 400,
-        ...(mode === "search" ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        messages: [{ role: "user", content: puzzlePrompt }]
-      })
+    const rawText = await callDeepSeekAPI({
+      system: "",
+      messages: [{ role: "user", content: puzzlePrompt }],
+      max_tokens: 400
     });
-
-    if (!res.ok) throw new Error("API error: " + res.status);
-    const data = await res.json();
-    const rawText = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
     const clean = rawText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
 
@@ -227,25 +214,12 @@ async function doTruthDare(choice) {
     imprintLogTurn("user", `[真心话大冒险] 【用户称呼代词】选了${choiceLabel}`);
     const systemPrompt = await buildSystemWithRecall(choiceLabel);
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 500,
-        system: systemPrompt,
-        messages: [...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: prompt }]
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: [...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: prompt }],
+      max_tokens: 500
     });
-
-    if (!res.ok) throw new Error("API error: " + res.status);
-    const data = await res.json();
-    const rawText = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

@@ -155,14 +155,14 @@ async function stopVoiceRecord() {
     textEl.classList.remove("loading");
   }
 
-  // Send to Claude if we got text
+  // Send to DeepSeek if we got text
   if (text) {
     isBusy = true;
     // Save voice message to chat history
     chatMessages.push({ role: "user", text, isVoice: true, voiceAudioId, duration, time: Date.now() });
     saveChatHistory();
 
-    // Send to Claude - build recall BEFORE pushing to history
+    // Send to DeepSeek - build recall BEFORE pushing to history
     setLoading(true);
     document.getElementById("statusBar").textContent = "正在思考...";
 
@@ -170,36 +170,12 @@ async function stopVoiceRecord() {
       const systemPrompt = await buildSystemWithRecall(text);
       conversationHistory.push({ role: "user", content: text });
       imprintLogTurn("user", text);
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: chatModel, max_tokens: 650,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-          system: systemPrompt, messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-        })
+      const rawText = await callDeepSeekAPI({
+        system: systemPrompt,
+        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        max_tokens: 650
       });
-
-      if (!claudeRes.ok) {
-        const et = await claudeRes.text().catch(()=>"");
-        if (et.includes("content filtering") || et.includes("blocked")) {
-          setLoading(false);
-          const fb = getRandomLyricFallback();
-          conversationHistory.push({ role: "assistant", content: safeStringify(fb) });
-          await showMultipleMessages(fb);
-          document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-          isBusy = false; return;
-        }
-        throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-      }
-      const claudeData = await claudeRes.json();
-      const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-      const messages = parseClaudeResponse(rawText);
+      const messages = parseDeepSeekResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -465,38 +441,12 @@ async function handleCallMessage(text) {
     const systemPrompt = await buildSystemWithRecall(text);
     conversationHistory.push({ role: "user", content: text });
     imprintLogTurn("user", text);
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 650,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: systemPrompt, messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 650
     });
-
-    if (!claudeRes.ok) {
-      const et = await claudeRes.text().catch(()=>"");
-      if (et.includes("content filtering") || et.includes("blocked")) {
-        const fb = getRandomLyricFallback();
-        conversationHistory.push({ role: "assistant", content: safeStringify(fb) });
-        document.getElementById("callStatus").textContent = "正在说话...";
-        setCallAvatarState("speaking");
-        for (const m of fb) appendBotMessage(m.english, m.chinese, null, true, null);
-        isBusy = false;
-        if (isInCall) { callWaiting = false; startListeningInCall(); }
-        return;
-      }
-      throw new Error("Claude API error (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-    }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

@@ -353,7 +353,7 @@ function gatherDiaryMaterial(targetDateStr) {
   return relevantMsgs.slice(0, 60);
 }
 
-// --- Generate diary via Claude API ---
+// --- Generate diary via DeepSeek API ---
 async function generateDiary(targetDateStr) {
   diaryGenerating = true;
 
@@ -419,33 +419,11 @@ ${prevDiaries}
 
 直接写日记正文：`;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 2000,
-        system: SYSTEM_PROMPT.replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
-        messages: [{ role: "user", content: diaryPrompt }]
-      })
+    const diaryContent = await callDeepSeekAPI({
+      system: SYSTEM_PROMPT.replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
+      messages: [{ role: "user", content: diaryPrompt }],
+      max_tokens: 2000
     });
-
-    if (!res.ok) {
-      const et = await res.text().catch(() => "");
-      throw new Error("API 错误 (" + res.status + "): " + (et || "").slice(0, 200));
-    }
-
-    const data = await res.json();
-    const diaryContent = data.content
-      .filter(c => c.type === "text" && c.text)
-      .map(c => c.text)
-      .join("")
-      .trim();
 
     if (!diaryContent || diaryContent.length < 50) {
       throw new Error("日记内容太短或为空");

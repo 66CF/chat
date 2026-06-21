@@ -150,7 +150,7 @@ async function sendDressupOutfit() {
   chatMessages.push({ role: "user", text: `[换装:递给【角色称呼代词】一件衣服]${extraText ? " " + extraText : ""}`, isImage: true, imgId, time: ts });
   saveChatHistory();
 
-  // Send to Claude — normal image message with dressing context
+  // Send to DeepSeek — normal image message with dressing context
   const dressupMsg = extraText
     ? `[【用户称呼代词】打开了更衣间，递给你一张衣服的图片想让你换上，同时说: "${extraText}"] 看看图片里的衣服，根据你的性格和喜好自然地反应——【角色可能的反应方式列表，如：你可以欣然接受穿上、嫌弃但勉强穿、不想穿、吐槽衣服风格、或者任何符合你性格的反应】。记住你是有自己审美和主见的【角色身份】。IMPORTANT: Reply with 2-4 separate JSON messages!`
     : `[【用户称呼代词】打开了更衣间，递给你一张衣服的图片想让你换上] 看看图片里的衣服，根据你的性格和喜好自然地反应——【角色可能的反应方式列表】。记住你是有自己审美和主见的【角色身份】。IMPORTANT: Reply with 2-4 separate JSON messages!`;
@@ -168,37 +168,12 @@ async function sendDressupOutfit() {
     conversationHistory.push({ role: "user", content: `[换装:递了一件衣服]${extraText ? " " + extraText : ""}` });
     imprintLogTurn("user", `[换装:递了一件衣服的图片]${extraText ? " " + extraText : ""}`);
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 650,
-        ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: systemPrompt,
-        messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }]
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
+      max_tokens: 650
     });
-
-    if (!claudeRes.ok) {
-      const et = await claudeRes.text().catch(()=>"");
-      if (et.includes("content filtering") || et.includes("blocked")) {
-        setLoading(false);
-        const fb = getRandomLyricFallback();
-        conversationHistory.push({ role: "assistant", content: safeStringify(fb) });
-        await showMultipleMessages(fb);
-        document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-        isBusy = false; return;
-      }
-      throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-    }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
@@ -260,29 +235,12 @@ async function sendDefaultOutfit() {
   document.getElementById("statusBar").textContent = "正在换衣服...";
 
   try {
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 500,
-        ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 500
     });
-
-    if (!claudeRes.ok) {
-      const et = await claudeRes.text().catch(()=>"");
-      throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-    }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

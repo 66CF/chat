@@ -388,8 +388,8 @@
     <h2>【应用标题】</h2>
     <p>输入 API Key 就可以开始聊天<br>Key 只保存在你的浏览器本地</p>
 
-    <label>Anthropic API Key</label>
-    <input type="password" id="claudeKey" placeholder="sk-ant-..." />
+    <label>DeepSeek API Key</label>
+    <input type="password" id="claudeKey" placeholder="sk-..." />
 
     <label>ElevenLabs API Key</label>
     <input type="password" id="elevenKey" placeholder="sk_..." />
@@ -417,7 +417,7 @@
     <button id="startBtn" onclick="startChat()" disabled>开始聊天</button>
 
     <div class="setup-hint">
-      Anthropic → <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><br>
+      DeepSeek → <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a><br>
       ElevenLabs → <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io</a><br>
       <span style="color:#555">OpenAI（选填）→ <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></span><br>
       <span style="color:#555">Google AI（选填，免费）→ <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></span>
@@ -454,7 +454,7 @@
   <div class="header-right">
     <button class="call-header-btn" id="callBtn" onclick="toggleCall()" disabled>📞 通话</button>
     <button class="header-btn" id="peekBtn" onclick="toggleScreenPeek()" style="font-size:10px">👀 视监:关</button>
-    <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Opus（更聪明，更贵）&#10;点击切换到 Sonnet">🧠 Opus</button>
+    <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Flash（更快）&#10;点击切换到 Pro">⚡ Flash</button>
     <button class="header-btn" id="webSearchBtn" onclick="toggleWebSearch()" style="font-size:10px">🔍 联网:关</button>
     <button class="header-btn" id="featuresBtn" onclick="toggleFeaturesSidebar()" style="font-size:10px">📋 更多</button>
     <button class="header-btn" onclick="toggleSearchBar()" style="font-size:10px">🔎 搜索</button>

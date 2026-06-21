@@ -74,7 +74,7 @@ async function feedBot(emoji, foodName, extraText) {
   chatMessages.push({ role: "user", text: `[喂食:${foodName}${emoji}]${extraText ? " " + extraText : ""}`, isFeed: true, time: ts });
   saveChatHistory();
 
-  // Tell Claude
+  // Tell DeepSeek
   const feedMsg = extraText
     ? `[【用户称呼代词，大写首字母如：She/He】 opened the feeding panel and picked ${foodName}${emoji} to feed you, while saying: "${extraText}"] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`
     : `[【用户称呼代词，大写首字母】 opened the feeding panel and picked ${foodName}${emoji} to feed you] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`;
@@ -86,29 +86,12 @@ async function feedBot(emoji, foodName, extraText) {
 
   try {
     const systemPrompt = await buildSystemWithRecall(feedMsg);
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel, max_tokens: 650,
-        ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 650
     });
-
-    if (!claudeRes.ok) {
-      const et = await claudeRes.text().catch(()=>"");
-      throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-    }
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

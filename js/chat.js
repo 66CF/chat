@@ -200,8 +200,8 @@ function onChatScrollTop() {
 
 // === Chat ===
 
-// Parse Claude's response: handles both array and single object
-function parseClaudeResponse(rawText) {
+// Parse DeepSeek response: handles both array and single object
+function parseDeepSeekResponse(rawText) {
   const clean = (rawText || "").replace(/```json|```/g, "").trim();
   let msgs;
   try {
@@ -537,7 +537,7 @@ async function handleFileUpload(event) {
   try {
     if (DOC_EXTENSIONS[ext]) {
       if (ext === "pdf") {
-        // PDF → send as base64 document block to Claude API
+        // PDF → send as base64 document block to DeepSeek API
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result.split(",")[1]);
@@ -838,37 +838,12 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: displayText || `[发了文件: ${fileData.name}]` });
       imprintLogTurn("user", `[发了文件: ${fileData.name}] ${text || ""}`);
 
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: chatModel, max_tokens: 650,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-          system: systemPrompt,
-          messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: apiContent }]
-        })
+      const rawText = await callDeepSeekAPI({
+        system: systemPrompt,
+        messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: apiContent }],
+        max_tokens: 650
       });
-
-      if (!claudeRes.ok) {
-        const et = await claudeRes.text().catch(()=>"");
-        if (et.includes("content filtering") || et.includes("blocked")) {
-          setLoading(false);
-          const fallback = getRandomLyricFallback();
-          conversationHistory.push({ role: "assistant", content: safeStringify(fallback) });
-          await showMultipleMessages(fallback);
-          document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-          isBusy = false; return;
-        }
-        throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-      }
-      const claudeData = await claudeRes.json();
-      const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-      const messages = parseClaudeResponse(rawText);
+      const messages = parseDeepSeekResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -892,37 +867,12 @@ async function sendMessage() {
       imprintLogTurn("user", text || "[发了一张图片]");
 
       // Send with image
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: chatModel, max_tokens: 650,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-          system: systemPrompt,
-          messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }]
-        })
+      const rawText2 = await callDeepSeekAPI({
+        system: systemPrompt,
+        messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
+        max_tokens: 650
       });
-
-      if (!claudeRes.ok) {
-        const et = await claudeRes.text().catch(()=>"");
-        if (et.includes("content filtering") || et.includes("blocked")) {
-          setLoading(false);
-          const fb = getRandomLyricFallback();
-          conversationHistory.push({ role: "assistant", content: safeStringify(fb) });
-          await showMultipleMessages(fb);
-          document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-          isBusy = false; return;
-        }
-        throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (et || "").slice(0, 200));
-      }
-      const claudeData = await claudeRes.json();
-      const rawText2 = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-      const messages = parseClaudeResponse(rawText2);
+      const messages = parseDeepSeekResponse(rawText2);
       conversationHistory.push({ role: "assistant", content: rawText2 });
       imprintLogTurn("assistant", rawText2);
 
@@ -942,44 +892,12 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: apiText });
       imprintLogTurn("user", apiText);
 
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": claudeApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: safeStringify({
-          model: chatModel,
-          ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-          max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
-          system: systemPrompt,
-          messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-        })
+      const rawText = await callDeepSeekAPI({
+        system: systemPrompt,
+        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650
       });
-
-      if (!claudeRes.ok) {
-        const errText = await claudeRes.text().catch(() => "");
-        // Content filter → show friendly in-character fallback
-        if (errText.includes("content filtering") || errText.includes("blocked")) {
-          setLoading(false);
-          const fallback = getRandomLyricFallback();
-          conversationHistory.push({ role: "assistant", content: safeStringify(fallback) });
-          await showMultipleMessages(fallback);
-          lastMessageTime = Date.now();
-          scheduleProactiveMessage(3);
-          document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-          isBusy = false;
-          input.focus();
-          return;
-        }
-        throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (errText || "").slice(0, 200));
-      }
-
-      const claudeData = await claudeRes.json();
-      const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-      const messages = parseClaudeResponse(rawText);
+      const messages = parseDeepSeekResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -1308,39 +1226,12 @@ async function sendAllStaged() {
     conversationHistory.push({ role: "user", content: combinedText });
     imprintLogTurn("user", combinedText);
     
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: safeStringify({
-        model: chatModel,
-        ...(webSearchEnabled ? {tools:[{type:"web_search_20250305",name:"web_search"}]} : {}),
-        max_tokens: 650,
-        system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim()))
-      })
+    const rawText = await callDeepSeekAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 650
     });
-    
-    if (!claudeRes.ok) {
-      const errText = await claudeRes.text().catch(() => "");
-      if (errText.includes("content filtering") || errText.includes("blocked")) {
-        setLoading(false);
-        const fallback = getRandomLyricFallback();
-        conversationHistory.push({ role: "assistant", content: safeStringify(fallback) });
-        await showMultipleMessages(fallback);
-        document.getElementById("statusBar").textContent = "在线 · 语音已连接";
-        isBusy = false; return;
-      }
-      throw new Error("Claude API 错误 (" + claudeRes.status + "): " + (errText || "").slice(0, 200));
-    }
-    
-    const claudeData = await claudeRes.json();
-    const rawText = claudeData.content.filter(c => c.type === "text" && c.text).map(c => c.text).pop() || "";
-    const messages = parseClaudeResponse(rawText);
+    const messages = parseDeepSeekResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
     

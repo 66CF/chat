@@ -3,7 +3,7 @@
 // ============================================================
 let rpActive = false;
 let rpConfig = null; // { botCharacter, userCharacter, backstory, relationship, summary, loadedSlot }
-let rpConvHistory = []; // roleplay-only conversation history for Claude context
+let rpConvHistory = []; // roleplay-only conversation history for DeepSeek context
 let rpSlots = new Array(10).fill(null);
 let rpSlotsLoaded = false;
 let rpSelectedSlot = -1;
@@ -203,15 +203,11 @@ async function sendRoleplayMessage(userText) {
 
   try {
     const sysPrompt = buildRpSystemPrompt();
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": claudeApiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: safeStringify({ model: chatModel, max_tokens: 1200, system: sysPrompt, messages: rpConvHistory.slice(-30) })
+    const rawText = await callDeepSeekAPI({
+      system: sysPrompt,
+      messages: rpConvHistory.slice(-30),
+      max_tokens: 1200
     });
-    if (!res.ok) throw new Error("API错误 " + res.status);
-
-    const data = await res.json();
-    const rawText = data.content.filter(c => c.type === "text" && c.text).map(c => c.text).join("").trim();
 
     rpConvHistory.push({ role: "assistant", content: rawText });
     conversationHistory.push({ role: "assistant", content: `[角色扮演] ${rawText}` });
@@ -324,14 +320,12 @@ ${transcript}
 2. 控制在3000字以内但要足够详细，以便下次能无缝继续剧情
 3. 直接输出总结内容，不加标题`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": claudeApiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-    body: safeStringify({ model: "claude-sonnet-4-6", max_tokens: 4000, messages: [{ role: "user", content: prompt }] })
+  const rawText = await callDeepSeekAPI({
+    system: "",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 4000
   });
-  if (!res.ok) throw new Error("API错误 " + res.status);
-  const data = await res.json();
-  return data.content.filter(c => c.type === "text").map(c => c.text).join("").trim();
+  return rawText;
 }
 
 function exitRpWithoutSave() {

@@ -34,3 +34,42 @@ let memoryDirHandle = null;
 let memoryEnabled = false;
 let memoryLoaded = false;
 let isBusy = false;
+
+const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
+const DEEPSEEK_MODEL = "deepseek-v4-flash";
+
+async function callDeepSeekAPI(options) {
+  const { system, messages, max_tokens = 650 } = options;
+  const apiMessages = [];
+  if (system) apiMessages.push({ role: "system", content: system });
+  for (const m of messages) {
+    if (m.content && (typeof m.content !== "string" || m.content.trim())) {
+      apiMessages.push(m);
+    }
+  }
+  const res = await fetch(DEEPSEEK_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + claudeApiKey
+    },
+    body: safeStringify({
+      model: DEEPSEEK_MODEL,
+      max_tokens,
+      messages: apiMessages
+    })
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error("DeepSeek API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
+  }
+  const data = await res.json();
+  return data.choices[0].message.content || "";
+}
+
+function extractTextFromResponse(data) {
+  if (data.choices && data.choices[0] && data.choices[0].message) {
+    return data.choices[0].message.content || "";
+  }
+  return "";
+}
