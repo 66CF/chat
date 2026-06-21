@@ -77,8 +77,6 @@ function loadKeys() {
   if (gk) document.getElementById("googleKey").value = gk;
   checkKeys();
 }
-let isBusy = false; // Global lock to prevent concurrent responses
-
 // Safe JSON.stringify that removes unpaired Unicode surrogates
 // (kaomoji/emoji can introduce these, causing "no low surrogate" API errors)
 function safeStringify(obj, replacer, space) {

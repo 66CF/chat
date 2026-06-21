@@ -1007,6 +1007,15 @@ function appendBotMessage(english, chinese, audioUrl, save, audioId, time, quote
 
   const quoteHtml = quoteData ? buildQuoteBlockHtml(quoteData) : "";
 
+  row.innerHTML = `<div class="bubble bot">${quoteHtml}<div class="english">${escapeHtml(english)}</div><div class="chinese">${escapeHtml(chinese)}</div>${audioBtn}</div><div class="msg-time">${formatMsgTime(ts)}</div>`;
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+
+  if (save) {
+    chatMessages.push({ role: "assistant", english, chinese, audioId: audioId || null, time: ts, quote: quoteData || undefined });
+    saveChatHistory();
+  }
+}
 
 // === Reply / Quote Feature ===
 let pendingReply = null; // { role, text, index }
@@ -1264,3 +1273,8 @@ function setLoading(show) {
     row.id = "loadingBubble";
     row.innerHTML = `<div class="loading-bubble">
       <span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>
+    </div>`;
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+  }
+}
