@@ -500,41 +500,26 @@ async function handleCallMessage(text) {
     const systemPrompt = await buildSystemWithRecall(text);
     conversationHistory.push({ role: "user", content: text });
     imprintLogTurn("user", text);
-    const rawText = await callMiMoAPI({
-      system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 650
-    });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    const subtitle = document.getElementById("callSubtitle");
-    document.getElementById("callStatus").textContent = "正在说话...";
-    setCallAvatarState("speaking");
+    // === Parallel TTS: fire TTS as soon as a message is detected in stream ===
+    const ttsResults = new Map();   // index → { audioUrl, savedAudioId }
+    const ttsPromises = new Map();  // index → Promise
+    let detectedCount = 0;
 
-    // Play each message sequentially in call mode
-    for (const msg of messages) {
-      subtitle.textContent = cleanTags(msg.chinese);
-      subtitle.classList.add("visible");
-      document.getElementById("callTranscript").innerHTML =
-        `<span class="him">${escapeHtml(cleanTags(msg.chinese))}</span>`;
-
-      let audioUrl = null, savedAudioId = null;
-      try {
-        const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
-          body: safeStringify({
-            model: MIMO_TTS_MODEL,
-            messages: [
-              { role: "assistant", content: msg.english }
-            ],
-            audio: { format: "wav", voice: MIMO_TTS_VOICE }
-          })
-        });
-        if (!ttsRes.ok) console.error("MiMo TTS error:", ttsRes.status, await ttsRes.text().catch(() => ""));
-        if (ttsRes.ok) {
+    function ensureTTS(index, english) {
+      if (ttsPromises.has(index)) return;
+      ttsPromises.set(index, (async () => {
+        try {
+          const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
+            body: safeStringify({
+              model: MIMO_TTS_MODEL,
+              messages: [{ role: "assistant", content: english }],
+              audio: { format: "wav", voice: MIMO_TTS_VOICE }
+            })
+          });
+          if (!ttsRes.ok) { console.error("TTS error:", ttsRes.status); return; }
           const ttsData = await ttsRes.json();
           const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
           if (audioBase64) {
@@ -542,18 +527,63 @@ async function handleCallMessage(text) {
             const bytes = new Uint8Array(binaryStr.length);
             for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
             const ab = new Blob([bytes], { type: "audio/wav" });
-            audioUrl = URL.createObjectURL(ab);
-            savedAudioId = "audio_" + Date.now();
+            const audioUrl = URL.createObjectURL(ab);
+            const savedAudioId = "audio_" + Date.now() + "_" + index;
             await AudioDB.save(savedAudioId, ab);
+            ttsResults.set(index, { audioUrl, savedAudioId });
           }
+        } catch(e) { console.warn("TTS error for msg", index, e); }
+      })());
+    }
+
+    // Streaming LLM call — onChunk fires TTS for each new complete message
+    const rawText = await callMiMoAPIStream({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: 650,
+      onChunk: (accumulated) => {
+        const msgs = extractCompleteMessages(accumulated);
+        for (let i = detectedCount; i < msgs.length; i++) {
+          document.getElementById("callStatus").textContent =
+            `正在思考... (${i + 1}条已缓存)`;
+          ensureTTS(i, msgs[i].english);
         }
-      } catch(e) {}
+        detectedCount = Math.max(detectedCount, msgs.length);
+      }
+    });
 
-      appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
+    // Parse final messages
+    const messages = parseMiMoResponse(rawText);
 
-      if (audioUrl && isInCall) {
+    // Ensure all TTS jobs are started (catch any missed in stream)
+    for (let i = 0; i < messages.length; i++) {
+      ensureTTS(i, messages[i].english);
+    }
+
+    conversationHistory.push({ role: "assistant", content: rawText });
+    imprintLogTurn("assistant", rawText);
+
+    const subtitle = document.getElementById("callSubtitle");
+    document.getElementById("callStatus").textContent = "正在说话...";
+    setCallAvatarState("speaking");
+
+    // Play messages sequentially — TTS should already be done (or nearly done)
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      subtitle.textContent = cleanTags(msg.chinese);
+      subtitle.classList.add("visible");
+      document.getElementById("callTranscript").innerHTML =
+        `<span class="him">${escapeHtml(cleanTags(msg.chinese))}</span>`;
+
+      // Wait for this message's TTS to finish
+      if (ttsPromises.has(i)) await ttsPromises.get(i);
+      const result = ttsResults.get(i);
+
+      appendBotMessage(msg.english, msg.chinese, result?.audioUrl || null, true, result?.savedAudioId || null);
+
+      if (result?.audioUrl && isInCall) {
         await new Promise(resolve => {
-          const audio = new Audio(audioUrl);
+          const audio = new Audio(result.audioUrl);
           currentAudio = audio;
           audio.onended = () => { currentAudio = null; resolve(); };
           audio.onerror = () => { currentAudio = null; resolve(); };
@@ -562,12 +592,9 @@ async function handleCallMessage(text) {
       }
     }
 
-    const resumeListening = () => {
-      subtitle.classList.remove("visible");
-      isBusy = false;
-      if (isInCall) { callWaiting = false; startListeningInCall(); }
-    };
-    resumeListening();
+    subtitle.classList.remove("visible");
+    isBusy = false;
+    if (isInCall) { callWaiting = false; startListeningInCall(); }
 
   } catch(err) {
     console.error("Call error:", err);
