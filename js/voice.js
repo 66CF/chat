@@ -269,7 +269,7 @@ async function transcribeWithMiMo(blob) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-key": mimoApiKey
+      "Authorization": "Bearer " + mimoApiKey
     },
     body: JSON.stringify({
       model: "mimo-v2.5-asr",
@@ -524,7 +524,7 @@ async function handleCallMessage(text) {
       try {
         const ttsRes = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "api-key": mimoApiKey },
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
           body: safeStringify({
             model: MIMO_TTS_MODEL,
             messages: [
@@ -533,6 +533,7 @@ async function handleCallMessage(text) {
             audio: { format: "wav", voice: MIMO_TTS_VOICE }
           })
         });
+        if (!ttsRes.ok) console.error("MiMo TTS error:", ttsRes.status, await ttsRes.text().catch(() => ""));
         if (ttsRes.ok) {
           const ttsData = await ttsRes.json();
           const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
