@@ -1,3 +1,22 @@
+// === Replay Audio ===
+function replayAudio(btn, audioUrl) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  btn.disabled = true;
+  btn.textContent = "🔊 播放中...";
+  const audio = new Audio(audioUrl);
+  currentAudio = audio;
+  audio.onended = () => { btn.disabled = false; btn.textContent = "🔈 再听一次"; currentAudio = null; };
+  audio.onerror = () => { btn.disabled = false; btn.textContent = "🔈 再听一次"; currentAudio = null; };
+  audio.play().catch(() => { btn.disabled = false; btn.textContent = "🔈 再听一次"; });
+}
+
+async function replayFromDB(btn, audioId) {
+  const blob = await AudioDB.load(audioId);
+  if (!blob) { btn.textContent = "✕ 音频不可用"; return; }
+  const url = URL.createObjectURL(blob);
+  replayAudio(btn, url);
+}
+
 // === Lazy Loading Helpers ===
 async function renderOneMessage(msg) {
   if (msg.role === "system" && msg.isRoleplay) {
