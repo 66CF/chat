@@ -32,6 +32,9 @@ async function startChat() {
   // Pre-request mic permission (one prompt at start, then never again)
   initMicStream();
 
+  // Load stickers from static files
+  loadStickers();
+
   // Start proactive messaging & notifications
   // Only read from localStorage if memory library hasn't loaded settings already
   if (!memoryLoaded) {
