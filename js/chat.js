@@ -248,7 +248,6 @@ async function showMultipleMessages(messages) {
         body: safeStringify({
           model: MIMO_TTS_MODEL,
           messages: [
-            { role: "user", content: "明亮活泼的青少年嗓音，语调轻快有活力，语速稍快" },
             { role: "assistant", content: msg.english }
           ],
           audio: { format: "wav", voice: MIMO_TTS_VOICE }
