@@ -812,7 +812,7 @@ async function sendMessage() {
   setLoading(true);
 
   try {
-    document.getElementById("statusBar").textContent = "正在思考...";
+    document.getElementById("statusBar").textContent = webSearchEnabled ? "正在联网搜索..." : "正在思考...";
 
     // Check if user is asking 【角色身份】 to look at screen
     if (!hasImage && peekEnabled && isAskingToLook(text)) {
@@ -868,12 +868,14 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: displayText || `[发了文件: ${fileData.name}]` });
       imprintLogTurn("user", `[发了文件: ${fileData.name}] ${text || ""}`);
 
-      const rawText = await callMiMoAPI({
-        system: systemPrompt,
-        messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: apiContent }],
-        max_tokens: 650
-      });
-      const messages = parseMiMoResponse(rawText);
+    const rawText = await callMiMoAPI({
+      system: systemPrompt,
+      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
+      tools: getWebSearchTool()
+    });
+    showWebSearchAnnotations(lastApiResponse);
+    const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -900,8 +902,10 @@ async function sendMessage() {
       const rawText2 = await callMiMoAPI({
         system: systemPrompt,
         messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
-        max_tokens: 650
+        max_tokens: 650,
+        tools: getWebSearchTool()
       });
+      showWebSearchAnnotations(lastApiResponse);
       const messages = parseMiMoResponse(rawText2);
       conversationHistory.push({ role: "assistant", content: rawText2 });
       imprintLogTurn("assistant", rawText2);
@@ -925,8 +929,10 @@ async function sendMessage() {
       const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-        max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650
+        max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
+        tools: getWebSearchTool()
       });
+      showWebSearchAnnotations(lastApiResponse);
       const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
@@ -1256,7 +1262,7 @@ async function sendAllStaged() {
   setLoading(true);
   
   try {
-    document.getElementById("statusBar").textContent = "正在思考...";
+    document.getElementById("statusBar").textContent = webSearchEnabled ? "正在联网搜索..." : "正在思考...";
     
     // Combine all texts for API
     const combinedText = combinedTexts.join("\n");
@@ -1265,12 +1271,14 @@ async function sendAllStaged() {
     conversationHistory.push({ role: "user", content: combinedText });
     imprintLogTurn("user", combinedText);
     
-    const rawText = await callMiMoAPI({
-      system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 650
-    });
-    const messages = parseMiMoResponse(rawText);
+      const rawText = await callMiMoAPI({
+        system: systemPrompt,
+        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
+        tools: getWebSearchTool()
+      });
+      showWebSearchAnnotations(lastApiResponse);
+      const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
     

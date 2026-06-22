@@ -191,25 +191,7 @@ The "wait" field = minutes before your NEXT proactive message if 【用户称呼
 
 Stay fully in character. Be natural. Vary your messages.`;
 
-  // Add lightweight period awareness (no extra API call, just a few tokens)
-  let periodHint = "";
-  if (periodData.cycles.length > 0) {
-    if (isCurrentlyOnPeriod()) {
-      const last = getLastCycle();
-      const daysSince = Math.floor((Date.now() - new Date(last.startDate + "T00:00:00").getTime()) / 86400000) + 1;
-      periodHint = `\n[CONTEXT: 【用户称呼代词，如：She/He】's on 【用户称呼代词的所有格】 period (day ${daysSince}). Be extra caring, ask how 【用户称呼代词】's feeling, remind 【用户称呼代词】 to stay warm and rest.]`;
-    } else {
-      const nextP = getNextPeriodDate();
-      if (nextP) {
-        const daysUntil = Math.ceil((nextP - Date.now()) / 86400000);
-        if (daysUntil >= 0 && daysUntil <= 2) {
-          periodHint = `\n[CONTEXT: 【用户称呼代词的所有格，如：Her/His】 period might be starting soon (predicted in ~${daysUntil} days). 【用户称呼代词】 may feel PMS symptoms. Be patient and gentle if 【用户称呼代词】 seems moody.]`;
-        }
-      }
-    }
-  }
-
-  return prompt + periodHint;
+  return prompt;
 }
 
 function scheduleProactiveMessage(delayMinutes) {
@@ -374,10 +356,34 @@ function toggleWebSearch() {
   localStorage.setItem("vbc_websearch", webSearchEnabled ? "1" : "0");
 }
 
-// Web search tool definition (MiMo 支持联网搜索，但需要额外配置)
 function getWebSearchTool() {
   if (!webSearchEnabled) return [];
-  return [{ type: "web_search_20250305", name: "web_search" }];
+  return [{ type: "web_search" }];
+}
+
+function showWebSearchAnnotations(data) {
+  const annotations = data?.choices?.[0]?.message?.annotations;
+  if (!annotations || annotations.length === 0) return;
+  const area = document.getElementById("chatArea");
+  const div = document.createElement("div");
+  div.className = "web-search-annotations";
+  let html = '<div class="wsa-title">🔍 联网搜索结果</div>';
+  for (const a of annotations) {
+    if (a.type !== "url_citation") continue;
+    const title = escapeHtml(a.title || a.site_name || "");
+    const url = a.url || "";
+    const site = escapeHtml(a.site_name || "");
+    const summary = escapeHtml((a.summary || "").slice(0, 120));
+    html += `<div class="wsa-item">`;
+    if (url) html += `<a class="wsa-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">${title}</a>`;
+    else html += `<span class="wsa-link">${title}</span>`;
+    if (site) html += `<span class="wsa-site">${site}</span>`;
+    if (summary) html += `<div class="wsa-summary">${summary}</div>`;
+    html += `</div>`;
+  }
+  div.innerHTML = html;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
 }
 let peekCanvas = null;
 
@@ -704,9 +710,6 @@ const savedTheme = localStorage.getItem("vbc_theme") || "default";
 setTheme(savedTheme);
 
 // Avatar & name restored from memory library via tryRestoreMemoryHandle
-
-// Load period data from localStorage (memory library load is handled via tryRestoreMemoryHandle → loadFromMemory)
-loadPeriodDataFromMemory();
 
 // Restore voice auto-play preference
 try {

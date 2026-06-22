@@ -27,6 +27,7 @@ let googleApiKey = "";
 let conversationHistory = [];
 let currentAudio = null;
 let chatMessages = []; // for display persistence
+let lastApiResponse = null; // last raw API response (for annotations etc.)
 let chatRenderStart = 0; // index of first rendered message (for lazy loading)
 const CHAT_PAGE_SIZE = 100;
 
@@ -41,7 +42,7 @@ const MIMO_MODEL_OMNI = "mimo-v2.5";
 const MIMO_MODEL_FLASH = "mimo-v2-flash";
 
 async function callMiMoAPI(options) {
-  const { system, messages, max_tokens = 650, model } = options;
+  const { system, messages, max_tokens = 650, model, tools } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {
@@ -50,23 +51,26 @@ async function callMiMoAPI(options) {
     }
   }
   const useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
+  const body = {
+    model: useModel,
+    max_tokens,
+    messages: apiMessages
+  };
+  if (tools && tools.length > 0) body.tools = tools;
   const res = await fetch(MIMO_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + mimoApiKey
     },
-    body: safeStringify({
-      model: useModel,
-      max_tokens,
-      messages: apiMessages
-    })
+    body: safeStringify(body)
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     throw new Error("MiMo API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
   }
   const data = await res.json();
+  lastApiResponse = data;
   return data.choices[0].message.content || "";
 }
 
