@@ -109,7 +109,4 @@ function saveChatHistory() {
     scheduleMemorySave();
   }
 }
-function loadChatHistory() {
-  // Loading is handled by tryRestoreMemoryHandle → loadFromMemory
-  // This function is now a no-op; kept for compatibility
-}
+

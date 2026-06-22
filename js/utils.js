@@ -1,25 +1,5 @@
 // === Utility Functions ===
-
-function safeStringify(obj, replacer, space) {
-  let raw = JSON.stringify(obj, replacer, space);
-  raw = raw.replace(/\\u[dD][89aAbB][0-9a-fA-F]{2}(?!\\u[dD][cCdDeEfF][0-9a-fA-F]{2})/g, '');
-  raw = raw.replace(/(?<!\\u[dD][89aAbB][0-9a-fA-F]{2})\\u[dD][cCdDeEfF][0-9a-fA-F]{2}/g, '');
-  let clean = '';
-  for (let i = 0; i < raw.length; i++) {
-    const c = raw.charCodeAt(i);
-    if (c >= 0xD800 && c <= 0xDBFF) {
-      const next = i + 1 < raw.length ? raw.charCodeAt(i + 1) : 0;
-      if (next >= 0xDC00 && next <= 0xDFFF) {
-        clean += raw[i] + raw[i + 1];
-        i++;
-      }
-    } else if (c >= 0xDC00 && c <= 0xDFFF) {
-    } else {
-      clean += raw[i];
-    }
-  }
-  return clean;
-}
+// Note: safeStringify() is defined in storage.js
 
 function escapeHtml(text) {
   const div = document.createElement("div");
