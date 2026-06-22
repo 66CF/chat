@@ -242,7 +242,7 @@ async function showMultipleMessages(messages) {
     // Generate TTS for this message
     let audioUrl = null, savedAudioId = null;
     try {
-      const ttsRes = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
+      const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
         body: safeStringify({

@@ -265,7 +265,7 @@ async function encodeAudioToBase64(blob) {
 
 async function transcribeWithMiMo(blob) {
   const base64 = await encodeAudioToBase64(blob);
-  const res = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
+  const res = await fetch(MIMO_API_BASE + "/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -522,7 +522,7 @@ async function handleCallMessage(text) {
 
       let audioUrl = null, savedAudioId = null;
       try {
-        const ttsRes = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
+        const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
           body: safeStringify({
