@@ -114,6 +114,7 @@ function clearChat() {
 function logout() {
   localStorage.removeItem("vbc_claude_key");
   localStorage.removeItem("vbc_eleven_key");
+  localStorage.removeItem("vbc_openai_key");
   localStorage.removeItem("vbc_mimo_key");
   localStorage.removeItem("vbc_google_key");
   location.reload();

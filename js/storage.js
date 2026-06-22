@@ -69,9 +69,11 @@ function loadKeys() {
   const ck = localStorage.getItem("vbc_claude_key");
   const ek = localStorage.getItem("vbc_eleven_key");
   const ok = localStorage.getItem("vbc_mimo_key");
+  const ak = localStorage.getItem("vbc_openai_key");
   const gk = localStorage.getItem("vbc_google_key");
   if (ck) document.getElementById("claudeKey").value = ck;
   if (ok) document.getElementById("mimoKey").value = ok;
+  else if (ak) { document.getElementById("mimoKey").value = ak; localStorage.setItem("vbc_mimo_key", ak); }
   else if (ek) { document.getElementById("mimoKey").value = ek; }
   if (gk) document.getElementById("googleKey").value = gk;
   checkKeys();
