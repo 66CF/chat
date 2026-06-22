@@ -243,7 +243,7 @@ function viewDiary(dateStr) {
 // --- Core logic: check what diary should exist and generate if needed ---
 async function checkAndGenerateDiary() {
   if (!memoryEnabled || !memoryDirHandle || diaryGenerating) return;
-  if (!claudeApiKey) return;
+  if (!mimoApiKey) return;
 
   // Ensure diaries are loaded
   if (!diaryLoaded) {
@@ -353,7 +353,7 @@ function gatherDiaryMaterial(targetDateStr) {
   return relevantMsgs.slice(0, 60);
 }
 
-// --- Generate diary via DeepSeek API ---
+// --- Generate diary via MiMo API ---
 async function generateDiary(targetDateStr) {
   diaryGenerating = true;
 
@@ -419,7 +419,7 @@ ${prevDiaries}
 
 直接写日记正文：`;
 
-    const diaryContent = await callDeepSeekAPI({
+    const diaryContent = await callMiMoAPI({
       system: SYSTEM_PROMPT.replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
       messages: [{ role: "user", content: diaryPrompt }],
       max_tokens: 2000

@@ -139,7 +139,7 @@ async function sendUserSticker(sticker) {
   chatMessages.push({ role: "user", text: `[表情包:${sticker.name}]`, isSticker: true, stickerName: sticker.name, stickerDataUrl, time: ts });
   saveChatHistory();
 
-  // Send to DeepSeek as text description
+  // Send to MiMo as text description
   const stickerMsg = `[【用户称呼代词】发了一个表情包：${sticker.name}]`;
 
   // Build system prompt BEFORE pushing to history
@@ -148,17 +148,17 @@ async function sendUserSticker(sticker) {
   conversationHistory.push({ role: "user", content: stickerMsg });
   imprintLogTurn("user", stickerMsg);
 
-  // Get DeepSeek's response
+  // Get MiMo's response
   setLoading(true);
   document.getElementById("statusBar").textContent = "正在思考...";
 
   try {
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 500
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

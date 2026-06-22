@@ -125,7 +125,7 @@ Respond in this EXACT JSON format (no other text):
 Keep puzzle under 100 characters, answer under 200 characters. Be creative!`;
     }
 
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: "",
       messages: [{ role: "user", content: puzzlePrompt }],
       max_tokens: 400
@@ -214,12 +214,12 @@ async function doTruthDare(choice) {
     imprintLogTurn("user", `[真心话大冒险] 【用户称呼代词】选了${choiceLabel}`);
     const systemPrompt = await buildSystemWithRecall(choiceLabel);
 
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: [...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: prompt }],
       max_tokens: 500
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

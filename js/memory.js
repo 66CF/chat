@@ -107,7 +107,7 @@ const ImprintMemory = {
 
   // --- Summarize buffered turns into a chunk ---
   async summarizeChunk() {
-    if (this.turnBuffer.length < 4 || !claudeApiKey) return;
+    if (this.turnBuffer.length < 4 || !mimoApiKey) return;
 
     const batch = this.turnBuffer.splice(0, this.chunkSize);
     const transcript = batch.map(t => {
@@ -117,7 +117,7 @@ const ImprintMemory = {
     }).join("\n");
 
     try {
-      const raw = await callDeepSeekAPI({
+      const raw = await callMiMoAPI({
         system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
 回复严格JSON格式，不要其他内容：
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
@@ -351,7 +351,7 @@ importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件
     if (rawResults.length > 0) {
       const contextCutoff = Math.max(0, conversationHistory.length - 20);
       // Only add raw results that aren't redundant with chunk results
-      // and aren't within the recent context window DeepSeek already sees
+      // and aren't within the recent context window MiMo already sees
       const rawLines = rawResults
         .filter(r => r.index < contextCutoff)
         .map(r => `[原文] ${r.text}`);
@@ -597,7 +597,7 @@ function imprintLogTurn(role, content) {
 
 // === Retro-import existing conversation history into Imprint Memory ===
 async function retroImportHistory() {
-  if (!claudeApiKey) { alert("需要先登录（DeepSeek API Key）"); return; }
+  if (!mimoApiKey) { alert("需要先登录（MiMo API Key）"); return; }
 
   // Collect all text messages from conversationHistory
   const textMsgs = conversationHistory.filter(m =>
@@ -619,7 +619,7 @@ async function retroImportHistory() {
     `将生成约 ${totalChunks} 条记忆摘要\n` +
     `语义向量: ${hasGoogle ? "✅ 会生成（已填 Google Key）" : "❌ 不会生成（未填 Google Key）"}\n\n` +
     `预计耗时: ${totalChunks * 3}-${totalChunks * 5} 秒\n` +
-    `（会调用 DeepSeek API 生成摘要${hasGoogle ? " + Google API 生成向量" : ""}）\n\n` +
+    `（会调用 MiMo API 生成摘要${hasGoogle ? " + Google API 生成向量" : ""}）\n\n` +
     `确定开始？`
   );
   if (!doIt) return;
@@ -647,7 +647,7 @@ async function retroImportHistory() {
     }).join("\n");
 
     try {
-      const raw = await callDeepSeekAPI({
+      const raw = await callMiMoAPI({
         system: `你是记忆摘要助手。把对话片段压缩成一段简洁摘要（中文，50-100字）+关键词列表。
 回复严格JSON格式，不要其他内容：
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
@@ -1207,7 +1207,6 @@ function saveSettingsToMemory() {
         webSearch: webSearchEnabled ? "1" : "0",
         chatModel: chatModel,
         keys: {
-          claude: claudeApiKey || "",
           openai: mimoApiKey || "",
           google: googleApiKey || ""
         }
@@ -1252,14 +1251,13 @@ async function loadSettingsFromMemory() {
       chatModel = settings.chatModel;
       const mBtn = document.getElementById("modelBtn");
       if (mBtn) {
-        const isOpus = chatModel === "deepseek-v4-pro";
-        mBtn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
-        mBtn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+        const isPro = chatModel === MIMO_MODEL_PRO;
+        mBtn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
+        mBtn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
       }
     }
     if (settings.keys) {
       const k = settings.keys;
-      if (k.claude) { claudeApiKey = k.claude; document.getElementById("claudeKey").value = k.claude; }
       if (k.openai) { mimoApiKey = k.openai; document.getElementById("mimoKey").value = k.openai; }
       if (k.google) { googleApiKey = k.google; document.getElementById("googleKey").value = k.google; }
       if (k.eleven && !k.openai) { mimoApiKey = k.eleven; document.getElementById("mimoKey").value = k.eleven; }

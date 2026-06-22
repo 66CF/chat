@@ -200,8 +200,8 @@ function onChatScrollTop() {
 
 // === Chat ===
 
-// Parse DeepSeek response: handles both array and single object
-function parseDeepSeekResponse(rawText) {
+// Parse MiMo response: handles both array and single object
+function parseMiMoResponse(rawText) {
   const clean = (rawText || "").replace(/```json|```/g, "").trim();
   let msgs;
   try {
@@ -548,7 +548,7 @@ async function handleFileUpload(event) {
   try {
     if (DOC_EXTENSIONS[ext]) {
       if (ext === "pdf") {
-        // PDF → send as base64 document block to DeepSeek API
+        // PDF → send as base64 document block to MiMo API
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result.split(",")[1]);
@@ -849,12 +849,12 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: displayText || `[发了文件: ${fileData.name}]` });
       imprintLogTurn("user", `[发了文件: ${fileData.name}] ${text || ""}`);
 
-      const rawText = await callDeepSeekAPI({
+      const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: apiContent }],
         max_tokens: 650
       });
-      const messages = parseDeepSeekResponse(rawText);
+      const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -878,12 +878,12 @@ async function sendMessage() {
       imprintLogTurn("user", text || "[发了一张图片]");
 
       // Send with image
-      const rawText2 = await callDeepSeekAPI({
+      const rawText2 = await callMiMoAPI({
         system: systemPrompt,
         messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
         max_tokens: 650
       });
-      const messages = parseDeepSeekResponse(rawText2);
+      const messages = parseMiMoResponse(rawText2);
       conversationHistory.push({ role: "assistant", content: rawText2 });
       imprintLogTurn("assistant", rawText2);
 
@@ -903,12 +903,12 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: apiText });
       imprintLogTurn("user", apiText);
 
-      const rawText = await callDeepSeekAPI({
+      const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650
       });
-      const messages = parseDeepSeekResponse(rawText);
+      const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -1246,12 +1246,12 @@ async function sendAllStaged() {
     conversationHistory.push({ role: "user", content: combinedText });
     imprintLogTurn("user", combinedText);
     
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 650
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
     

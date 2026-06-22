@@ -3,7 +3,7 @@
 // ============================================================
 let rpActive = false;
 let rpConfig = null; // { botCharacter, userCharacter, backstory, relationship, summary, loadedSlot }
-let rpConvHistory = []; // roleplay-only conversation history for DeepSeek context
+let rpConvHistory = []; // roleplay-only conversation history for MiMo context
 let rpSlots = new Array(10).fill(null);
 let rpSlotsLoaded = false;
 let rpSelectedSlot = -1;
@@ -203,7 +203,7 @@ async function sendRoleplayMessage(userText) {
 
   try {
     const sysPrompt = buildRpSystemPrompt();
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: sysPrompt,
       messages: rpConvHistory.slice(-30),
       max_tokens: 1200
@@ -320,7 +320,7 @@ ${transcript}
 2. 控制在3000字以内但要足够详细，以便下次能无缝继续剧情
 3. 直接输出总结内容，不加标题`;
 
-  const rawText = await callDeepSeekAPI({
+  const rawText = await callMiMoAPI({
     system: "",
     messages: [{ role: "user", content: prompt }],
     max_tokens: 4000

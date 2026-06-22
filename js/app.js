@@ -1,13 +1,11 @@
 // === Setup ===
-const claudeInput = document.getElementById("claudeKey");
 const mimoInput = document.getElementById("mimoKey");
 const googleInput = document.getElementById("googleKey");
 const startButton = document.getElementById("startBtn");
 
 function checkKeys() {
-  startButton.disabled = !(claudeInput.value.trim() && mimoInput.value.trim());
+  startButton.disabled = !mimoInput.value.trim();
 }
-claudeInput.addEventListener("input", checkKeys);
 mimoInput.addEventListener("input", checkKeys);
 googleInput.addEventListener("input", checkKeys);
 mimoInput.addEventListener("keydown", e => {
@@ -18,10 +16,9 @@ googleInput.addEventListener("keydown", e => {
 });
 
 async function startChat() {
-  claudeApiKey = claudeInput.value.trim();
   mimoApiKey = mimoInput.value.trim();
   googleApiKey = googleInput.value.trim();
-  if (!claudeApiKey || !mimoApiKey) return;
+  if (!mimoApiKey) return;
 
   saveKeys();
   saveSettingsToMemory(); // Sync keys + settings to memory library
@@ -43,7 +40,7 @@ async function startChat() {
     const savedWebSearch = localStorage.getItem("vbc_websearch");
     webSearchEnabled = savedWebSearch === "1"; // default off
     const savedModel = localStorage.getItem("vbc_model");
-    if (savedModel === "deepseek-v4-flash" || savedModel === "deepseek-v4-pro") chatModel = savedModel;
+    if (savedModel === MIMO_MODEL_PRO || savedModel === MIMO_MODEL_FLASH || savedModel === MIMO_MODEL_OMNI) chatModel = savedModel;
   }
   const pBtn = document.getElementById("proactiveBtn");
   pBtn.textContent = proactiveEnabled ? "💬 主动消息:开" : "💬 主动消息:关";
@@ -58,9 +55,9 @@ async function startChat() {
 
   // Restore model toggle
   const mBtn = document.getElementById("modelBtn");
-  const isOpus = chatModel === "deepseek-v4-pro";
-  mBtn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
-  mBtn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  const isPro = chatModel === MIMO_MODEL_PRO;
+  mBtn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
+  mBtn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
 
   // Restore chat messages (memory library > localStorage)
   // Load chat history from memory library
@@ -223,7 +220,7 @@ function scheduleProactiveMessage(delayMinutes) {
 }
 
 async function sendProactiveMessage() {
-  if (!proactiveEnabled || isInCall || !claudeApiKey || proactiveSending || isBusy) return;
+  if (!proactiveEnabled || isInCall || !mimoApiKey || proactiveSending || isBusy) return;
   proactiveSending = true;
 
   try {
@@ -254,7 +251,7 @@ async function sendProactiveMessage() {
       { role: "user", content: prompt }
     ];
 
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: SYSTEM_PROMPT + recallBlock,
       messages: reqMsgs,
       max_tokens: 500
@@ -301,14 +298,14 @@ async function sendProactiveMessage() {
     try {
       if (Notification.permission === "granted" && document.hidden) {
         const lastMsg = messages[messages.length - 1];
-        new Notification("DeepSeek 💕", {
+        new Notification("MiMo 💕", {
           body: cleanTags(lastMsg.chinese),
           icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💕</text></svg>"
         });
       }
     } catch(e) {}
 
-    // Schedule next based on DeepSeek's decision
+    // Schedule next based on MiMo's decision
     proactiveSending = false;
     if (proactiveEnabled && waitMinutes >= 0) {
       scheduleProactiveMessage(waitMinutes);
@@ -349,19 +346,19 @@ let screenVideo = null;
 let peekEnabled = false;
 
 // === Model Switcher ===
-let chatModel = "deepseek-v4-flash";
+let chatModel = MIMO_MODEL_PRO;
 function toggleModel() {
-  if (chatModel === "deepseek-v4-flash") {
-    chatModel = "deepseek-v4-pro";
+  if (chatModel === MIMO_MODEL_PRO) {
+    chatModel = MIMO_MODEL_FLASH;
   } else {
-    chatModel = "deepseek-v4-flash";
+    chatModel = MIMO_MODEL_PRO;
   }
   const btn = document.getElementById("modelBtn");
-  const isOpus = chatModel === "deepseek-v4-pro";
-  btn.textContent = isOpus ? "🧠 Pro" : "⚡ Flash";
+  const isPro = chatModel === MIMO_MODEL_PRO;
+  btn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
   btn.style.opacity = "1";
-  btn.title = isOpus ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
-  document.getElementById("statusBar").textContent = isOpus ? "🧠 已切换到 Pro 模型（更强）" : "⚡ 已切换到 Flash 模型（更快）";
+  btn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  document.getElementById("statusBar").textContent = isPro ? "🧠 已切换到 Pro 模型（更强）" : "⚡ 已切换到 Flash 模型（更快）";
   saveSettingsToMemory();
   localStorage.setItem("vbc_model", chatModel);
 }
@@ -377,7 +374,7 @@ function toggleWebSearch() {
   localStorage.setItem("vbc_websearch", webSearchEnabled ? "1" : "0");
 }
 
-// Web search tool definition (DeepSeek 不支持内置联网搜索，此功能已禁用)
+// Web search tool definition (MiMo 支持联网搜索，但需要额外配置)
 function getWebSearchTool() {
   if (!webSearchEnabled) return [];
   return [{ type: "web_search_20250305", name: "web_search" }];
@@ -467,7 +464,7 @@ async function appendScreenshotFromDB(peekId) {
 
 // Peek and react — called by proactive system or user request
 async function peekAndReact(userAsked) {
-  if (!peekEnabled || !claudeApiKey) return false;
+  if (!peekEnabled || !mimoApiKey) return false;
   const dataUrl = captureScreen();
   if (!dataUrl) { return false; }
   const base64 = dataUrl.split(",")[1];
@@ -506,12 +503,12 @@ async function peekAndReact(userAsked) {
       }
     ];
 
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: await buildSystemWithRecall("看屏幕"),
       messages: apiMsgs,
       max_tokens: 500
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

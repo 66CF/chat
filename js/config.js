@@ -22,7 +22,6 @@ Rules:
 - If user sends a file, comment on it naturally. Only generate a file back when EXPLICITLY asked: {"english":"...","chinese":"...","file":{"name":"x.ext","content":"..."}}
 - Do NOT include any text outside the JSON array`;
 
-let claudeApiKey = "";
 let mimoApiKey = "";
 let googleApiKey = "";
 let conversationHistory = [];
@@ -36,11 +35,13 @@ let memoryEnabled = false;
 let memoryLoaded = false;
 let isBusy = false;
 
-const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
-const DEEPSEEK_MODEL = "deepseek-v4-flash";
+const MIMO_API_URL = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions";
+const MIMO_MODEL_PRO = "mimo-v2.5-pro";
+const MIMO_MODEL_OMNI = "mimo-v2.5";
+const MIMO_MODEL_FLASH = "mimo-v2-flash";
 
-async function callDeepSeekAPI(options) {
-  const { system, messages, max_tokens = 650 } = options;
+async function callMiMoAPI(options) {
+  const { system, messages, max_tokens = 650, model } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {
@@ -48,21 +49,22 @@ async function callDeepSeekAPI(options) {
       apiMessages.push(m);
     }
   }
-  const res = await fetch(DEEPSEEK_API_URL, {
+  const useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
+  const res = await fetch(MIMO_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + claudeApiKey
+      "Authorization": "Bearer " + mimoApiKey
     },
     body: safeStringify({
-      model: DEEPSEEK_MODEL,
+      model: useModel,
       max_tokens,
       messages: apiMessages
     })
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    throw new Error("DeepSeek API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
+    throw new Error("MiMo API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
   }
   const data = await res.json();
   return data.choices[0].message.content || "";

@@ -74,7 +74,7 @@ async function feedBot(emoji, foodName, extraText) {
   chatMessages.push({ role: "user", text: `[喂食:${foodName}${emoji}]${extraText ? " " + extraText : ""}`, isFeed: true, time: ts });
   saveChatHistory();
 
-  // Tell DeepSeek
+  // Tell MiMo
   const feedMsg = extraText
     ? `[【用户称呼代词，大写首字母如：She/He】 opened the feeding panel and picked ${foodName}${emoji} to feed you, while saying: "${extraText}"] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`
     : `[【用户称呼代词，大写首字母】 opened the feeding panel and picked ${foodName}${emoji} to feed you] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`;
@@ -86,12 +86,12 @@ async function feedBot(emoji, foodName, extraText) {
 
   try {
     const systemPrompt = await buildSystemWithRecall(feedMsg);
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 650
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

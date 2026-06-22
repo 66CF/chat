@@ -155,14 +155,14 @@ async function stopVoiceRecord() {
     textEl.classList.remove("loading");
   }
 
-  // Send to DeepSeek if we got text
+  // Send to MiMo if we got text
   if (text) {
     isBusy = true;
     // Save voice message to chat history
     chatMessages.push({ role: "user", text, isVoice: true, voiceAudioId, duration, time: Date.now() });
     saveChatHistory();
 
-    // Send to DeepSeek - build recall BEFORE pushing to history
+    // Send to MiMo - build recall BEFORE pushing to history
     setLoading(true);
     document.getElementById("statusBar").textContent = "正在思考...";
 
@@ -170,12 +170,12 @@ async function stopVoiceRecord() {
       const systemPrompt = await buildSystemWithRecall(text);
       conversationHistory.push({ role: "user", content: text });
       imprintLogTurn("user", text);
-      const rawText = await callDeepSeekAPI({
+      const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
         max_tokens: 650
       });
-      const messages = parseDeepSeekResponse(rawText);
+      const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -500,12 +500,12 @@ async function handleCallMessage(text) {
     const systemPrompt = await buildSystemWithRecall(text);
     conversationHistory.push({ role: "user", content: text });
     imprintLogTurn("user", text);
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 650
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 

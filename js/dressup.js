@@ -150,7 +150,7 @@ async function sendDressupOutfit() {
   chatMessages.push({ role: "user", text: `[换装:递给【角色称呼代词】一件衣服]${extraText ? " " + extraText : ""}`, isImage: true, imgId, time: ts });
   saveChatHistory();
 
-  // Send to DeepSeek — normal image message with dressing context
+  // Send to MiMo — normal image message with dressing context
   const dressupMsg = extraText
     ? `[【用户称呼代词】打开了更衣间，递给你一张衣服的图片想让你换上，同时说: "${extraText}"] 看看图片里的衣服，根据你的性格和喜好自然地反应——【角色可能的反应方式列表，如：你可以欣然接受穿上、嫌弃但勉强穿、不想穿、吐槽衣服风格、或者任何符合你性格的反应】。记住你是有自己审美和主见的【角色身份】。IMPORTANT: Reply with 2-4 separate JSON messages!`
     : `[【用户称呼代词】打开了更衣间，递给你一张衣服的图片想让你换上] 看看图片里的衣服，根据你的性格和喜好自然地反应——【角色可能的反应方式列表】。记住你是有自己审美和主见的【角色身份】。IMPORTANT: Reply with 2-4 separate JSON messages!`;
@@ -168,12 +168,12 @@ async function sendDressupOutfit() {
     conversationHistory.push({ role: "user", content: `[换装:递了一件衣服]${extraText ? " " + extraText : ""}` });
     imprintLogTurn("user", `[换装:递了一件衣服的图片]${extraText ? " " + extraText : ""}`);
 
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
       max_tokens: 650
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
@@ -235,12 +235,12 @@ async function sendDefaultOutfit() {
   document.getElementById("statusBar").textContent = "正在换衣服...";
 
   try {
-    const rawText = await callDeepSeekAPI({
+    const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 500
     });
-    const messages = parseDeepSeekResponse(rawText);
+    const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
