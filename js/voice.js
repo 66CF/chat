@@ -138,20 +138,20 @@ async function stopVoiceRecord() {
     playVoiceMsg(document.getElementById(msgId + "-player"), audioUrl);
   }
 
-  // Transcribe with Whisper (requires OpenAI Key)
+  // Transcribe with MiMo ASR
   let text = "";
-  if (openaiApiKey) {
+  if (mimoApiKey) {
     try {
-      text = await transcribeWithWhisper(audioBlob);
+      text = await transcribeWithMiMo(audioBlob);
     } catch(e) {
-      console.warn("Whisper failed:", e);
+      console.warn("MiMo ASR failed:", e);
     }
   }
 
   // Update the voice message with transcribed text
   const textEl = document.getElementById(msgId + "-text");
   if (textEl) {
-    textEl.textContent = text || (openaiApiKey ? "（未识别到文字）" : "（填写 OpenAI Key 可识别文字）");
+    textEl.textContent = text || (mimoApiKey ? "（未识别到文字）" : "（填写 MiMo API Key 可识别文字）");
     textEl.classList.remove("loading");
   }
 
@@ -213,21 +213,80 @@ function updateRecTime() {
 }
 
 // === Transcription ===
-async function transcribeWithWhisper(blob) {
-  const fd = new FormData();
-  fd.append("file", blob, "audio.webm");
-  fd.append("model", "whisper-1");
-  fd.append("language", "zh");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${openaiApiKey}` },
-    body: fd
-  });
-  if (!res.ok) throw new Error("Whisper error " + res.status);
-  return ((await res.json()).text || "").trim();
+async function encodeAudioToBase64(blob) {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  audioCtx.close();
+
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length;
+  const bytesPerSample = 2;
+  const dataSize = length * numChannels * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  function writeString(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+  view.setUint16(32, numChannels * bytesPerSample, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  const channels = [];
+  for (let ch = 0; ch < numChannels; ch++) channels.push(audioBuffer.getChannelData(ch));
+
+  let offset = 44;
+  for (let i = 0; i < length; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const s = Math.max(-1, Math.min(1, channels[ch][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
-// === Transcription (Whisper only) ===
+async function transcribeWithMiMo(blob) {
+  const base64 = await encodeAudioToBase64(blob);
+  const res = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": mimoApiKey
+    },
+    body: JSON.stringify({
+      model: "mimo-v2.5-asr",
+      messages: [{
+        role: "user",
+        content: [{
+          type: "input_audio",
+          input_audio: { data: `data:audio/wav;base64,${base64}` }
+        }]
+      }],
+      asr_options: { language: "zh" }
+    })
+  });
+  if (!res.ok) throw new Error("MiMo ASR error " + res.status);
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || "").trim();
+}
 
 // === Voice Message UI ===
 function appendVoiceMessage(msgId, audioUrl, duration, text, voiceAudioId, restored, time) {
@@ -350,8 +409,8 @@ async function startCall() {
     alert("麦克风未授权，请刷新页面重试");
     return;
   }
-  if (!openaiApiKey) {
-    alert("语音通话需要填写 OpenAI API Key 用于语音识别");
+  if (!mimoApiKey) {
+    alert("语音通话需要填写 MiMo API Key 用于语音识别");
     return;
   }
   if (isRecording) cancelVoiceCheck();
@@ -411,7 +470,7 @@ async function startListeningInCall() {
       audioChunks = [];
       document.getElementById("callStatus").textContent = "🔄 识别中...";
       try {
-        const text = await transcribeWithWhisper(audioBlob);
+        const text = await transcribeWithMiMo(audioBlob);
         if (text && isInCall) handleCallMessage(text);
         else if (isInCall && !callWaiting) startListeningInCall();
       } catch(e) {
@@ -463,19 +522,29 @@ async function handleCallMessage(text) {
 
       let audioUrl = null, savedAudioId = null;
       try {
-        const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+        const ttsRes = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "xi-api-key": elevenApiKey },
+          headers: { "Content-Type": "application/json", "api-key": mimoApiKey },
           body: safeStringify({
-            text: msg.english, model_id: "eleven_v3",
-            voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.5, use_speaker_boost: true } /* 【TTS语音参数：stability=稳定性(0-1)，similarity_boost=音色相似度(0-1)，style=风格强度(0-1)，请根据所选ElevenLabs音源微调这些数值】 */
+            model: MIMO_TTS_MODEL,
+            messages: [
+              { role: "assistant", content: msg.english }
+            ],
+            audio: { format: "wav", voice: MIMO_TTS_VOICE }
           })
         });
         if (ttsRes.ok) {
-          const ab = await ttsRes.blob();
-          audioUrl = URL.createObjectURL(ab);
-          savedAudioId = "audio_" + Date.now();
-          await AudioDB.save(savedAudioId, ab);
+          const ttsData = await ttsRes.json();
+          const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
+          if (audioBase64) {
+            const binaryStr = atob(audioBase64);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+            const ab = new Blob([bytes], { type: "audio/wav" });
+            audioUrl = URL.createObjectURL(ab);
+            savedAudioId = "audio_" + Date.now();
+            await AudioDB.save(savedAudioId, ab);
+          }
         }
       } catch(e) {}
 

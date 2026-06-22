@@ -242,19 +242,29 @@ async function showMultipleMessages(messages) {
     // Generate TTS for this message
     let audioUrl = null, savedAudioId = null;
     try {
-      const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+      const ttsRes = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "xi-api-key": elevenApiKey },
+        headers: { "Content-Type": "application/json", "api-key": mimoApiKey },
         body: safeStringify({
-          text: msg.english, model_id: "eleven_v3",
-          voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.5, use_speaker_boost: true } /* 【TTS语音参数：stability=稳定性(0-1)，similarity_boost=音色相似度(0-1)，style=风格强度(0-1)，请根据所选ElevenLabs音源微调这些数值】 */
+          model: MIMO_TTS_MODEL,
+          messages: [
+            { role: "assistant", content: msg.english }
+          ],
+          audio: { format: "wav", voice: MIMO_TTS_VOICE }
         })
       });
       if (ttsRes.ok) {
-        const ab = await ttsRes.blob();
-        audioUrl = URL.createObjectURL(ab);
-        savedAudioId = "audio_" + Date.now() + "_" + i;
-        await AudioDB.save(savedAudioId, ab);
+        const ttsData = await ttsRes.json();
+        const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
+        if (audioBase64) {
+          const binaryStr = atob(audioBase64);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+          const ab = new Blob([bytes], { type: "audio/wav" });
+          audioUrl = URL.createObjectURL(ab);
+          savedAudioId = "audio_" + Date.now() + "_" + i;
+          await AudioDB.save(savedAudioId, ab);
+        }
       }
     } catch(e) { console.error("TTS error:", e); }
 

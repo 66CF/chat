@@ -1,22 +1,17 @@
 // === Setup ===
 const claudeInput = document.getElementById("claudeKey");
-const elevenInput = document.getElementById("elevenKey");
-const openaiInput = document.getElementById("openaiKey");
+const mimoInput = document.getElementById("mimoKey");
 const googleInput = document.getElementById("googleKey");
 const startButton = document.getElementById("startBtn");
 
 function checkKeys() {
-  startButton.disabled = !(claudeInput.value.trim() && elevenInput.value.trim());
+  startButton.disabled = !(claudeInput.value.trim() && mimoInput.value.trim());
 }
 claudeInput.addEventListener("input", checkKeys);
-elevenInput.addEventListener("input", checkKeys);
-openaiInput.addEventListener("input", checkKeys);
+mimoInput.addEventListener("input", checkKeys);
 googleInput.addEventListener("input", checkKeys);
-openaiInput.addEventListener("keydown", e => {
+mimoInput.addEventListener("keydown", e => {
   if (e.key === "Enter") startChat();
-});
-elevenInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !startButton.disabled) startChat();
 });
 googleInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !startButton.disabled) startChat();
@@ -24,10 +19,9 @@ googleInput.addEventListener("keydown", e => {
 
 async function startChat() {
   claudeApiKey = claudeInput.value.trim();
-  elevenApiKey = elevenInput.value.trim();
-  openaiApiKey = openaiInput.value.trim();
+  mimoApiKey = mimoInput.value.trim();
   googleApiKey = googleInput.value.trim();
-  if (!claudeApiKey || !elevenApiKey) return;
+  if (!claudeApiKey || !mimoApiKey) return;
 
   saveKeys();
   saveSettingsToMemory(); // Sync keys + settings to memory library
@@ -120,7 +114,7 @@ function clearChat() {
 function logout() {
   localStorage.removeItem("vbc_claude_key");
   localStorage.removeItem("vbc_eleven_key");
-  localStorage.removeItem("vbc_openai_key");
+  localStorage.removeItem("vbc_mimo_key");
   localStorage.removeItem("vbc_google_key");
   location.reload();
 }
@@ -745,14 +739,14 @@ document.addEventListener("visibilitychange", () => {
 // Detect STT support and show hint
 (function() {
   const el = document.getElementById("sttStatus");
-  if (openaiInput.value.trim()) {
-    el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 Whisper（效果最佳）</span>';
+  if (mimoInput.value.trim()) {
+    el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 MiMo ASR</span>';
   } else {
     el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别和语音通话需要此项</span>';
   }
-  openaiInput.addEventListener("input", () => {
-    if (openaiInput.value.trim()) {
-      el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 Whisper（效果最佳）</span>';
+  mimoInput.addEventListener("input", () => {
+    if (mimoInput.value.trim()) {
+      el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 MiMo ASR</span>';
     } else {
       el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别和语音通话需要此项</span>';
     }

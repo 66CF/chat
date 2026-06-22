@@ -61,19 +61,18 @@ const AudioDB = {
 function saveKeys() {
   if (document.getElementById("rememberKeys").checked) {
     localStorage.setItem("vbc_claude_key", claudeApiKey);
-    localStorage.setItem("vbc_eleven_key", elevenApiKey);
-    localStorage.setItem("vbc_openai_key", openaiApiKey);
+    localStorage.setItem("vbc_mimo_key", mimoApiKey);
     localStorage.setItem("vbc_google_key", googleApiKey);
   }
 }
 function loadKeys() {
   const ck = localStorage.getItem("vbc_claude_key");
   const ek = localStorage.getItem("vbc_eleven_key");
-  const ok = localStorage.getItem("vbc_openai_key");
+  const ok = localStorage.getItem("vbc_mimo_key");
   const gk = localStorage.getItem("vbc_google_key");
   if (ck) document.getElementById("claudeKey").value = ck;
-  if (ek) document.getElementById("elevenKey").value = ek;
-  if (ok) document.getElementById("openaiKey").value = ok;
+  if (ok) document.getElementById("mimoKey").value = ok;
+  else if (ek) { document.getElementById("mimoKey").value = ek; }
   if (gk) document.getElementById("googleKey").value = gk;
   checkKeys();
 }

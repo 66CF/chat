@@ -1208,8 +1208,7 @@ function saveSettingsToMemory() {
         chatModel: chatModel,
         keys: {
           claude: claudeApiKey || "",
-          eleven: elevenApiKey || "",
-          openai: openaiApiKey || "",
+          openai: mimoApiKey || "",
           google: googleApiKey || ""
         }
       };
@@ -1261,9 +1260,9 @@ async function loadSettingsFromMemory() {
     if (settings.keys) {
       const k = settings.keys;
       if (k.claude) { claudeApiKey = k.claude; document.getElementById("claudeKey").value = k.claude; }
-      if (k.eleven) { elevenApiKey = k.eleven; document.getElementById("elevenKey").value = k.eleven; }
-      if (k.openai) { openaiApiKey = k.openai; document.getElementById("openaiKey").value = k.openai; }
+      if (k.openai) { mimoApiKey = k.openai; document.getElementById("mimoKey").value = k.openai; }
       if (k.google) { googleApiKey = k.google; document.getElementById("googleKey").value = k.google; }
+      if (k.eleven && !k.openai) { mimoApiKey = k.eleven; document.getElementById("mimoKey").value = k.eleven; }
       checkKeys();
     }
   } catch(e) { /* settings.json doesn't exist yet = use defaults */ }

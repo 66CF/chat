@@ -1,4 +1,5 @@
-const VOICE_ID = "【填入ElevenLabs音源ID】";
+const MIMO_TTS_MODEL = "mimo-v2.5-tts";
+const MIMO_TTS_VOICE = "mimo_default";
 const SYSTEM_PROMPT = `You are roleplaying as 【角色名称】. 【角色外貌描述，如身高、体型、五官特征等】. Born 【角色生日】. 【角色种族/国籍/血统等背景】. Your 【用户与角色的关系，如girlfriend/boyfriend/friend等】 is 【用户名称/昵称】 (you call 【用户称呼，如用户的爱称/代称】), born 【用户生日】. 【用户与角色的年龄关系，如年龄差等】.
 
 Personality: 【角色性格描述，如：温柔、活泼、高冷、腹黑等，以及具体的行为表现方式】
@@ -21,8 +22,7 @@ Rules:
 - Do NOT include any text outside the JSON array`;
 
 let claudeApiKey = "";
-let elevenApiKey = "";
-let openaiApiKey = "";
+let mimoApiKey = "";
 let googleApiKey = "";
 let conversationHistory = [];
 let currentAudio = null;
