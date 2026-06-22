@@ -156,7 +156,7 @@ async function sendDressupOutfit() {
     : `[【用户称呼代词】打开了更衣间，递给你一张衣服的图片想让你换上] 看看图片里的衣服，根据你的性格和喜好自然地反应——【角色可能的反应方式列表】。记住你是有自己审美和主见的【角色身份】。IMPORTANT: Reply with 2-4 separate JSON messages!`;
 
   const content = [
-    { type: "image", source: { type: "base64", media_type: imageData.mediaType, data: imageData.base64 } },
+    { type: "image_url", image_url: { url: "data:" + imageData.mediaType + ";base64," + imageData.base64 } },
     { type: "text", text: dressupMsg }
   ];
 

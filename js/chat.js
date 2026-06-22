@@ -222,6 +222,7 @@ function onChatScrollTop() {
 // Parse MiMo response: handles both array and single object
 function parseMiMoResponse(rawText) {
   const clean = (rawText || "").replace(/```json|```/g, "").trim();
+  if (!clean) throw new Error("API 返回为空");
   let msgs;
   try {
     const parsed = JSON.parse(clean);
@@ -234,7 +235,7 @@ function parseMiMoResponse(rawText) {
     if (engM && chnM) {
       msgs = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
     } else {
-      throw new Error("回复解析失败");
+      throw new Error("回复解析失败: " + clean.slice(0, 300));
     }
   }
   // Filter: remove empty messages and emoji/kaomoji-only messages
@@ -887,7 +888,7 @@ async function sendMessage() {
 
     } else if (imageData) {
       const content = [
-        { type: "image", source: { type: "base64", media_type: imageData.mediaType, data: imageData.base64 } },
+        { type: "image_url", image_url: { url: "data:" + imageData.mediaType + ";base64," + imageData.base64 } },
         { type: "text", text: replyContext + (text || "[【用户称呼代词】发了一张图片给你，看看是什么并自然地反应]") }
       ];
 

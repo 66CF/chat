@@ -478,7 +478,7 @@ async function peekAndReact(userAsked) {
       {
         role: "user",
         content: [
-          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+          { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
           { type: "text", text: peekPrompt }
         ]
       }

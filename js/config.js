@@ -38,10 +38,11 @@ let isBusy = false;
 const MIMO_API_URL = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions";
 const MIMO_MODEL_PRO = "mimo-v2.5-pro";
 const MIMO_MODEL_OMNI = "mimo-v2.5";
-const MIMO_MODEL_FLASH = "mimo-v2-flash";
+const MIMO_MODEL_FLASH = "mimo-v2.5";
 
 async function callMiMoAPI(options) {
-  const { system, messages, max_tokens = 650, model, tools } = options;
+  const { system, messages, model, tools } = options;
+  let { max_tokens = 650 } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {
@@ -49,7 +50,10 @@ async function callMiMoAPI(options) {
       apiMessages.push(m);
     }
   }
-  const useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
+  let useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
+  const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
+  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_OMNI;
+  if (hasImage && max_tokens < 2000) max_tokens = 2000;
   const body = {
     model: useModel,
     max_tokens,
@@ -69,7 +73,17 @@ async function callMiMoAPI(options) {
     throw new Error("MiMo API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
   }
   const data = await res.json();
-  return data.choices[0].message.content || "";
+  const msg = data.choices?.[0]?.message;
+  const content = msg?.content;
+  if (!content) {
+    if (msg?.reasoning_content) {
+      console.warn("Model returned reasoning only, no content. Reasoning:", msg.reasoning_content.slice(0, 300));
+      throw new Error("模型只返回了推理过程，未生成回复");
+    }
+    console.warn("API response:", JSON.stringify(data).slice(0, 1000));
+    throw new Error("API 返回无内容");
+  }
+  return content;
 }
 
 function extractTextFromResponse(data) {
