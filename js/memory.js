@@ -594,8 +594,6 @@ function imprintLogTurn(role, content) {
 }
 
 // === Local Memory Library (本地记忆库) ===
-let memoryDirHandle = null;
-let memoryEnabled = false;
 
 // === Retro-import existing conversation history into Imprint Memory ===
 async function retroImportHistory() {
@@ -1135,7 +1133,6 @@ async function loadFromMemory() {
 
 // Auto-save to memory library — immediate
 let memorySaveTimer = null;
-let memoryLoaded = false;
 function scheduleMemorySave() {
   if (!memoryEnabled || !memoryDirHandle) return;
   saveToMemory();
