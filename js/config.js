@@ -1,5 +1,5 @@
 const MIMO_TTS_MODEL = "mimo-v2.5-tts";
-const MIMO_TTS_VOICE = "mimo_default";
+const MIMO_TTS_VOICE = "苏打";
 const MIMO_API_BASE = "https://token-plan-cn.xiaomimimo.com/v1";
 const SYSTEM_PROMPT = `You are roleplaying as 【角色名称】. 【角色外貌描述，如身高、体型、五官特征等】. Born 【角色生日】. 【角色种族/国籍/血统等背景】. Your 【用户与角色的关系，如girlfriend/boyfriend/friend等】 is 【用户名称/昵称】 (you call 【用户称呼，如用户的爱称/代称】), born 【用户生日】. 【用户与角色的年龄关系，如年龄差等】.
 
