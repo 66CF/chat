@@ -27,7 +27,6 @@ let googleApiKey = "";
 let conversationHistory = [];
 let currentAudio = null;
 let chatMessages = []; // for display persistence
-let lastApiResponse = null; // last raw API response (for annotations etc.)
 let chatRenderStart = 0; // index of first rendered message (for lazy loading)
 const CHAT_PAGE_SIZE = 100;
 
@@ -70,7 +69,6 @@ async function callMiMoAPI(options) {
     throw new Error("MiMo API 错误 (" + res.status + "): " + (errText || "").slice(0, 200));
   }
   const data = await res.json();
-  lastApiResponse = data;
   return data.choices[0].message.content || "";
 }
 

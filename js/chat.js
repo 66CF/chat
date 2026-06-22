@@ -874,8 +874,7 @@ async function sendMessage() {
       max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
       tools: getWebSearchTool()
     });
-    showWebSearchAnnotations(lastApiResponse);
-    const messages = parseMiMoResponse(rawText);
+      const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
@@ -905,7 +904,6 @@ async function sendMessage() {
         max_tokens: 650,
         tools: getWebSearchTool()
       });
-      showWebSearchAnnotations(lastApiResponse);
       const messages = parseMiMoResponse(rawText2);
       conversationHistory.push({ role: "assistant", content: rawText2 });
       imprintLogTurn("assistant", rawText2);
@@ -932,7 +930,6 @@ async function sendMessage() {
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
         tools: getWebSearchTool()
       });
-      showWebSearchAnnotations(lastApiResponse);
       const messages = parseMiMoResponse(rawText);
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
@@ -1277,7 +1274,6 @@ async function sendAllStaged() {
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
         tools: getWebSearchTool()
       });
-      showWebSearchAnnotations(lastApiResponse);
       const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);

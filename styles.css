@@ -346,31 +346,6 @@
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: 6px; font-size: 11px; color: var(--text-secondary);
   }
-  .web-search-annotations {
-    max-width: 75%; padding: 10px 14px; margin: 4px 0 4px 44px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 12px; font-size: 12px;
-  }
-  .wsa-title {
-    font-size: 11px; color: var(--accent); margin-bottom: 8px;
-    font-weight: 600;
-  }
-  .wsa-item {
-    padding: 4px 0; border-bottom: 1px solid var(--border-light);
-  }
-  .wsa-item:last-child { border-bottom: none; }
-  .wsa-link {
-    color: var(--text-primary); text-decoration: none; font-weight: 500;
-    font-size: 12px;
-  }
-  a.wsa-link:hover { color: var(--accent); text-decoration: underline; }
-  .wsa-site {
-    font-size: 10px; color: var(--text-dim); margin-left: 6px;
-  }
-  .wsa-summary {
-    font-size: 11px; color: var(--text-secondary); margin-top: 2px;
-    line-height: 1.4;
-  }
   .sticker-img {
     max-width: 120px; max-height: 120px; border-radius: 8px;
     margin-top: 6px; display: block; cursor: pointer;

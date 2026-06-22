@@ -360,31 +360,6 @@ function getWebSearchTool() {
   if (!webSearchEnabled) return [];
   return [{ type: "web_search" }];
 }
-
-function showWebSearchAnnotations(data) {
-  const annotations = data?.choices?.[0]?.message?.annotations;
-  if (!annotations || annotations.length === 0) return;
-  const area = document.getElementById("chatArea");
-  const div = document.createElement("div");
-  div.className = "web-search-annotations";
-  let html = '<div class="wsa-title">🔍 联网搜索结果</div>';
-  for (const a of annotations) {
-    if (a.type !== "url_citation") continue;
-    const title = escapeHtml(a.title || a.site_name || "");
-    const url = a.url || "";
-    const site = escapeHtml(a.site_name || "");
-    const summary = escapeHtml((a.summary || "").slice(0, 120));
-    html += `<div class="wsa-item">`;
-    if (url) html += `<a class="wsa-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">${title}</a>`;
-    else html += `<span class="wsa-link">${title}</span>`;
-    if (site) html += `<span class="wsa-site">${site}</span>`;
-    if (summary) html += `<div class="wsa-summary">${summary}</div>`;
-    html += `</div>`;
-  }
-  div.innerHTML = html;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-}
 let peekCanvas = null;
 
 async function toggleScreenPeek() {
