@@ -572,19 +572,13 @@ ${diarySnippets}
 </diary-info>`;
   }
 
-  // Period calendar context (only when user mentions period-related topics)
-  let periodBlock = "";
-  if (shouldReadPeriodContext(userText)) {
-    periodBlock = buildPeriodContext();
-  }
-
   // Music context (only when listen-together mode is active + relevant)
   let musicBlock = "";
   if (shouldInjectMusicContext(userText)) {
     musicBlock = buildMusicContext(userText);
   }
 
-  return SYSTEM_PROMPT + timeBlock + stickerBlock + recallBlock + diaryBlock + periodBlock + musicBlock + getGameContext();
+  return SYSTEM_PROMPT + timeBlock + stickerBlock + recallBlock + diaryBlock + musicBlock + getGameContext();
 }
 
 // --- Helper: log both sides of a turn and extract facts ---
@@ -912,8 +906,6 @@ async function saveToMemory() {
     console.log("Memory saved:", allIds.length, "blobs");
     // Also save imprint memory data
     await ImprintMemory.save(memoryDirHandle);
-    // Also save period data
-    await savePeriodData();
     // Also save music history
     await saveMusicHistory();
   } catch(e) {
@@ -985,9 +977,6 @@ async function loadFromMemory() {
     // Load diary entries
     updateMemoryLoader(72, "正在加载日记...");
     await loadDiariesFromMemory();
-
-    // Load period data
-    await loadPeriodDataFromMemory();
 
     // Load music library
     await loadMusicFromMemory();
