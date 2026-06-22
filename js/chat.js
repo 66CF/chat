@@ -252,42 +252,53 @@ function parseMiMoResponse(rawText) {
 }
 
 // Display multiple messages with sequential TTS
-async function showMultipleMessages(messages) {
+// === TTS Helper: fetch TTS for a single message ===
+async function fetchTTSForMessage(english, index) {
+  try {
+    const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
+      body: safeStringify({
+        model: MIMO_TTS_MODEL,
+        messages: [{ role: "assistant", content: english }],
+        audio: { format: "wav", voice: MIMO_TTS_VOICE }
+      })
+    });
+    if (!ttsRes.ok) { console.error("MiMo TTS error:", ttsRes.status); return { audioUrl: null, savedAudioId: null }; }
+    const ttsData = await ttsRes.json();
+    const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
+    if (audioBase64) {
+      const binaryStr = atob(audioBase64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+      const ab = new Blob([bytes], { type: "audio/wav" });
+      const audioUrl = URL.createObjectURL(ab);
+      const savedAudioId = "audio_" + Date.now() + "_" + index;
+      AudioDB.save(savedAudioId, ab).catch(e => console.warn("DB save error:", e));
+      return { audioUrl, savedAudioId };
+    }
+  } catch(e) { console.warn("TTS error for msg", index, e); }
+  return { audioUrl: null, savedAudioId: null };
+}
+
+async function showMultipleMessages(messages, ttsPrefetch) {
+  // ttsPrefetch: optional Map<index, Promise<{audioUrl, savedAudioId}>>
+  //   pre-fired TTS promises (from streaming mode). If provided, we reuse them.
+
+  // Fire all TTS requests in parallel (for any not already prefetched)
+  const ttsPromises = messages.map((msg, i) => {
+    if (ttsPrefetch && ttsPrefetch.has(i)) return ttsPrefetch.get(i);
+    return fetchTTSForMessage(msg.english, i);
+  });
+
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    
-    // Small delay between messages (looks like real typing)
-    if (i > 0) await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
 
-    // Generate TTS for this message
-    let audioUrl = null, savedAudioId = null;
-    try {
-      const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
-        body: safeStringify({
-          model: MIMO_TTS_MODEL,
-          messages: [
-            { role: "assistant", content: msg.english }
-          ],
-          audio: { format: "wav", voice: MIMO_TTS_VOICE }
-        })
-      });
-      if (!ttsRes.ok) console.error("MiMo TTS error:", ttsRes.status, await ttsRes.text().catch(() => ""));
-      if (ttsRes.ok) {
-        const ttsData = await ttsRes.json();
-        const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
-        if (audioBase64) {
-          const binaryStr = atob(audioBase64);
-          const bytes = new Uint8Array(binaryStr.length);
-          for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
-          const ab = new Blob([bytes], { type: "audio/wav" });
-          audioUrl = URL.createObjectURL(ab);
-          savedAudioId = "audio_" + Date.now() + "_" + i;
-          await AudioDB.save(savedAudioId, ab);
-        }
-      }
-    } catch(e) { console.error("TTS error:", e); }
+    // Reduced typing delay (parallel TTS means TTS is likely already done)
+    if (i > 0) await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
+
+    // Wait for this message's TTS (should already be resolved in most cases)
+    const { audioUrl, savedAudioId } = await ttsPromises[i];
 
     appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
 
@@ -925,19 +936,46 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: apiText });
       imprintLogTurn("user", apiText);
 
-      const rawText = await callMiMoAPI({
+      // === Streaming + Parallel TTS ===
+      // Fire TTS as soon as each complete message is detected in the stream
+      const ttsPromisesMap = new Map();  // index → Promise<{audioUrl, savedAudioId}>
+      let detectedCount = 0;
+
+      function ensureTTS(index, english) {
+        if (ttsPromisesMap.has(index)) return;
+        ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+      }
+
+      const rawText = await callMiMoAPIStream({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
-        tools: getWebSearchTool()
+        tools: getWebSearchTool(),
+        onChunk: (accumulated) => {
+          const msgs = extractCompleteMessages(accumulated);
+          for (let i = detectedCount; i < msgs.length; i++) {
+            document.getElementById("statusBar").textContent =
+              `正在思考... (${i + 1}条已缓存)`;
+            ensureTTS(i, msgs[i].english);
+          }
+          detectedCount = Math.max(detectedCount, msgs.length);
+        }
       });
+
       const messages = parseMiMoResponse(rawText);
+
+      // Ensure all TTS jobs are started (catch any missed in stream)
+      for (let i = 0; i < messages.length; i++) {
+        ensureTTS(i, messages[i].english);
+      }
+
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
       document.getElementById("statusBar").textContent = "正在生成语音...";
       setLoading(false);
-      await showMultipleMessages(messages);
+      // Pass prefetched TTS promises — showMultipleMessages will reuse them
+      await showMultipleMessages(messages, ttsPromisesMap);
       lastMessageTime = Date.now();
       scheduleProactiveMessage(3);
 
@@ -1269,19 +1307,40 @@ async function sendAllStaged() {
     conversationHistory.push({ role: "user", content: combinedText });
     imprintLogTurn("user", combinedText);
     
-      const rawText = await callMiMoAPI({
+    // === Streaming + Parallel TTS ===
+    const ttsPromisesMap = new Map();
+    let detectedCount = 0;
+    function ensureTTS(index, english) {
+      if (ttsPromisesMap.has(index)) return;
+      ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+    }
+
+      const rawText = await callMiMoAPIStream({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
-        tools: getWebSearchTool()
+        tools: getWebSearchTool(),
+        onChunk: (accumulated) => {
+          const msgs = extractCompleteMessages(accumulated);
+          for (let i = detectedCount; i < msgs.length; i++) {
+            ensureTTS(i, msgs[i].english);
+          }
+          detectedCount = Math.max(detectedCount, msgs.length);
+        }
       });
       const messages = parseMiMoResponse(rawText);
+
+    // Ensure all TTS jobs are started
+    for (let i = 0; i < messages.length; i++) {
+      ensureTTS(i, messages[i].english);
+    }
+
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
     
     document.getElementById("statusBar").textContent = "正在生成语音...";
     setLoading(false);
-    await showMultipleMessages(messages);
+    await showMultipleMessages(messages, ttsPromisesMap);
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);
     document.getElementById("statusBar").textContent = "在线 · 语音已连接";

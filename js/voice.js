@@ -170,18 +170,42 @@ async function stopVoiceRecord() {
       const systemPrompt = await buildSystemWithRecall(text);
       conversationHistory.push({ role: "user", content: text });
       imprintLogTurn("user", text);
-      const rawText = await callMiMoAPI({
+
+      // === Streaming + Parallel TTS ===
+      const ttsPromisesMap = new Map();
+      let detectedCount = 0;
+
+      function ensureTTS(index, english) {
+        if (ttsPromisesMap.has(index)) return;
+        ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+      }
+
+      const rawText = await callMiMoAPIStream({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-        max_tokens: 650
+        max_tokens: 650,
+        onChunk: (accumulated) => {
+          const msgs = extractCompleteMessages(accumulated);
+          for (let i = detectedCount; i < msgs.length; i++) {
+            ensureTTS(i, msgs[i].english);
+          }
+          detectedCount = Math.max(detectedCount, msgs.length);
+        }
       });
+
       const messages = parseMiMoResponse(rawText);
+
+      // Ensure all TTS jobs are started
+      for (let i = 0; i < messages.length; i++) {
+        ensureTTS(i, messages[i].english);
+      }
+
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
       document.getElementById("statusBar").textContent = "正在生成语音...";
       setLoading(false);
-      await showMultipleMessages(messages);
+      await showMultipleMessages(messages, ttsPromisesMap);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
 
     } catch(err) {

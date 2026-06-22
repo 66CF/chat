@@ -236,10 +236,26 @@ async function sendProactiveMessage() {
       { role: "user", content: prompt }
     ];
 
-    const rawText = await callMiMoAPI({
+    // === Streaming + Parallel TTS ===
+    const ttsPromisesMap = new Map();
+    let detectedCount = 0;
+    function ensureTTS(index, english) {
+      if (ttsPromisesMap.has(index)) return;
+      ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+    }
+
+    const rawText = await callMiMoAPIStream({
       system: SYSTEM_PROMPT + recallBlock,
       messages: reqMsgs,
-      max_tokens: 500
+      max_tokens: 500,
+      onChunk: (accumulated) => {
+        const cleanPartial = accumulated.replace(/```json|```/g, "").trim();
+        const msgs = extractCompleteMessages(cleanPartial);
+        for (let i = detectedCount; i < msgs.length; i++) {
+          ensureTTS(i, msgs[i].english);
+        }
+        detectedCount = Math.max(detectedCount, msgs.length);
+      }
     });
     const clean = (rawText || "").replace(/```json|```/g, "").trim();
 
@@ -269,14 +285,19 @@ async function sendProactiveMessage() {
 
     if (messages.length === 0) throw new Error("Empty response");
 
+    // Ensure all TTS jobs are started
+    for (let i = 0; i < messages.length; i++) {
+      ensureTTS(i, messages[i].english);
+    }
+
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
 
-    // Show all messages with sequential TTS
-    await showMultipleMessages(messages);
+    // Show all messages with parallel TTS (prefetched during streaming)
+    await showMultipleMessages(messages, ttsPromisesMap);
     lastMessageTime = Date.now();
 
     // Browser notification (show last message)
@@ -487,16 +508,37 @@ async function peekAndReact(userAsked) {
       }
     ];
 
-    const rawText = await callMiMoAPI({
+    // === Streaming + Parallel TTS ===
+    const ttsPromisesMap = new Map();
+    let detectedCount = 0;
+    function ensureTTS(index, english) {
+      if (ttsPromisesMap.has(index)) return;
+      ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+    }
+
+    const rawText = await callMiMoAPIStream({
       system: await buildSystemWithRecall("看屏幕"),
       messages: apiMsgs,
-      max_tokens: 500
+      max_tokens: 500,
+      onChunk: (accumulated) => {
+        const msgs = extractCompleteMessages(accumulated);
+        for (let i = detectedCount; i < msgs.length; i++) {
+          ensureTTS(i, msgs[i].english);
+        }
+        detectedCount = Math.max(detectedCount, msgs.length);
+      }
     });
     const messages = parseMiMoResponse(rawText);
+
+    // Ensure all TTS jobs are started
+    for (let i = 0; i < messages.length; i++) {
+      ensureTTS(i, messages[i].english);
+    }
+
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
-    await showMultipleMessages(messages);
+    await showMultipleMessages(messages, ttsPromisesMap);
     lastMessageTime = Date.now();
     return true;
   } catch(err) {
