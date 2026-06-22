@@ -305,26 +305,6 @@
   </div>
 </div>
 
-<!-- Period Calendar -->
-<div id="periodOverlay" class="period-overlay" onclick="togglePeriodPanel()"></div>
-<div id="periodPanel" class="period-panel">
-  <div class="period-panel-header">
-    <h3>🩸 经期日历</h3>
-    <button class="period-panel-close" onclick="togglePeriodPanel()">✕</button>
-  </div>
-  <div class="period-panel-tabs">
-    <button class="period-tab active" onclick="switchPeriodTab('calendar')">📅 日历</button>
-    <button class="period-tab" onclick="switchPeriodTab('records')">📊 记录</button>
-    <button class="period-tab" onclick="switchPeriodTab('meds')">💊 用药</button>
-    <button class="period-tab" onclick="switchPeriodTab('settings')">⚙️ 设置</button>
-  </div>
-  <div class="period-panel-body" id="periodPanelBody"></div>
-</div>
-<!-- Period Day Detail Modal -->
-<div class="period-day-modal" id="periodDayModal" onclick="if(event.target===this)closePeriodDayModal()">
-  <div class="period-day-content" id="periodDayContent"></div>
-</div>
-
 <!-- Music Panel -->
 <div id="musicOverlay" class="music-overlay" onclick="toggleMusicPanel()"></div>
 <div id="musicPanel" class="music-panel">
@@ -354,10 +334,6 @@
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleDiaryPanel()">
       <span class="fi-icon">📔</span>
       <div class="fi-info"><div class="fi-name">日记</div><div class="fi-desc">【角色名称】 的每日日记</div></div>
-    </div>
-    <div class="feature-item" onclick="toggleFeaturesSidebar();togglePeriodPanel()">
-      <span class="fi-icon">🩸</span>
-      <div class="fi-info"><div class="fi-name">经期日历</div><div class="fi-desc">周期记录与健康打卡</div></div>
     </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleMusicPanel()">
       <span class="fi-icon">🎵</span>
@@ -626,7 +602,6 @@
 <script src="js/diary.js"></script>
 <script src="js/music.js"></script>
 <script src="js/roleplay.js"></script>
-<script src="js/period.js"></script>
 <script src="js/dressup.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/chat.js"></script>
