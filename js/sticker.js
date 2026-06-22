@@ -1,33 +1,17 @@
 let stickerCatalog = []; // [{name, url, fileName}]
+
 async function loadStickers() {
   stickerCatalog = [];
-  if (!memoryDirHandle || !memoryEnabled) return;
   try {
-    let stickersDir;
-    try { stickersDir = await memoryDirHandle.getDirectoryHandle("stickers"); }
-    catch(e) { return; }
-
-    for await (const [name, handle] of stickersDir.entries()) {
-      if (handle.kind !== "file") continue;
-      const ext = name.split(".").pop().toLowerCase();
-      if (!["jpg","jpeg","png","gif","webp","svg","bmp"].includes(ext)) continue;
-      const stickerName = name.replace(/\.\w+$/, "");
-      const f = await handle.getFile();
-
-      // Compress/resize to max 300x300 for performance
-      let url;
-      if (ext === "gif" || ext === "svg") {
-        // GIF/SVG keep original (GIF animation would break with canvas)
-        url = URL.createObjectURL(f);
-      } else {
-        try {
-          url = await resizeImage(f, 300);
-        } catch(e) {
-          url = URL.createObjectURL(f);
-        }
-      }
-      stickerCatalog.push({ name: stickerName, url, fileName: name });
+    const resp = await fetch("/sticks.json");
+    if (!resp.ok) return;
+    const names = await resp.json();
+    
+    for (const name of names) {
+      const url = `/sticks/${name}.gif`;
+      stickerCatalog.push({ name, url, fileName: `${name}.gif` });
     }
+    
     if (stickerCatalog.length > 0) {
       console.log("[Stickers] Loaded:", stickerCatalog.length, "stickers");
     }
