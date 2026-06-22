@@ -468,14 +468,25 @@ async function startListeningInCall() {
       if (audioChunks.length === 0) { if (isInCall && !callWaiting) setTimeout(startListeningInCall, 500); return; }
       const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       audioChunks = [];
-      document.getElementById("callStatus").textContent = "🔄 识别中...";
+      document.getElementById("callStatus").textContent = "🔄 正在理解...";
       try {
-        const text = await transcribeWithMiMo(audioBlob);
-        if (text && isInCall) handleCallMessage(text);
-        else if (isInCall && !callWaiting) startListeningInCall();
+        // Encode to WAV base64 for mimo-v2.5 native audio understanding
+        const base64Audio = await encodeAudioToBase64(audioBlob);
+        if (isInCall) {
+          // Send audio directly to mimo-v2.5 (bypasses separate ASR call)
+          handleCallAudio(audioBlob, base64Audio);
+        }
       } catch(e) {
-        document.getElementById("callStatus").textContent = "识别失败，继续聆听...";
-        if (isInCall && !callWaiting) setTimeout(startListeningInCall, 1000);
+        console.warn("Audio encoding failed, falling back to ASR:", e);
+        // Fallback: use traditional ASR → text → LLM path
+        try {
+          const text = await transcribeWithMiMo(audioBlob);
+          if (text && isInCall) handleCallMessage(text);
+          else if (isInCall && !callWaiting) startListeningInCall();
+        } catch(e2) {
+          document.getElementById("callStatus").textContent = "识别失败，继续聆听...";
+          if (isInCall && !callWaiting) setTimeout(startListeningInCall, 1000);
+        }
       }
     };
     mediaRecorder.start(250);
@@ -571,6 +582,153 @@ async function handleCallMessage(text) {
 
   } catch(err) {
     console.error("Call error:", err);
+    document.getElementById("callStatus").textContent = "出错了，继续聆听...";
+    isBusy = false;
+    if (isInCall) { callWaiting = false; setTimeout(startListeningInCall, 1500); }
+  }
+}
+
+// === Native Audio Call Handler (mimo-v2.5 audio understanding) ===
+// Bypasses ASR — sends audio directly to mimo-v2.5, saving ~1-2s per turn
+async function handleCallAudio(audioBlob, base64Audio) {
+  callWaiting = true;
+  isBusy = true;
+  setCallAvatarState("thinking");
+  document.getElementById("callStatus").textContent = "正在理解语音...";
+  document.getElementById("callTranscript").innerHTML = `<span class="you">你: 🎤 语音输入中...</span>`;
+
+  const empty = document.getElementById("emptyState");
+  if (empty) empty.remove();
+
+  // Background ASR for display text & conversation history (non-blocking)
+  let userText = "";
+  const asrPromise = transcribeWithMiMo(audioBlob).then(t => {
+    userText = (t || "").trim();
+    if (userText && isInCall) {
+      document.getElementById("callTranscript").innerHTML =
+        `<span class="you">你: ${escapeHtml(userText)}</span>`;
+    }
+    return userText;
+  }).catch(() => "");
+
+  try {
+    const systemPrompt = await buildSystemWithRecall("语音通话");
+
+    // Send audio directly to mimo-v2.5 (replaces ASR + LLM, saves ~1-2s)
+    const rawText = await callMiMoWithAudio(base64Audio, {
+      system: systemPrompt,
+      history: conversationHistory.slice(-19),
+      max_tokens: 650
+    });
+
+    // Push placeholder to conversation history (will be updated when ASR completes)
+    const userContent = "[语音消息]";
+    conversationHistory.push({ role: "user", content: userContent });
+    imprintLogTurn("user", userContent);
+    chatMessages.push({ role: "user", text: userContent, isVoice: true, time: Date.now() });
+    saveChatHistory();
+
+    // Background: update history with real text when ASR finishes
+    asrPromise.then(text => {
+      if (text) {
+        // Update conversationHistory placeholder
+        for (let i = conversationHistory.length - 1; i >= 0; i--) {
+          if (conversationHistory[i].role === "user" && conversationHistory[i].content === "[语音消息]") {
+            conversationHistory[i].content = text;
+            break;
+          }
+        }
+        // Update chatMessages placeholder
+        for (let i = chatMessages.length - 1; i >= 0; i--) {
+          if (chatMessages[i].role === "user" && chatMessages[i].text === "[语音消息]") {
+            chatMessages[i].text = text;
+            break;
+          }
+        }
+        saveChatHistory();
+        // Update call transcript display
+        document.getElementById("callTranscript").innerHTML =
+          `<span class="you">你: ${escapeHtml(text)}</span>`;
+      }
+    });
+
+    const messages = parseMiMoResponse(rawText);
+    conversationHistory.push({ role: "assistant", content: rawText });
+    imprintLogTurn("assistant", rawText);
+
+    const subtitle = document.getElementById("callSubtitle");
+    document.getElementById("callStatus").textContent = "正在说话...";
+    setCallAvatarState("speaking");
+
+    // Play each message sequentially in call mode
+    for (const msg of messages) {
+      subtitle.textContent = cleanTags(msg.chinese);
+      subtitle.classList.add("visible");
+      document.getElementById("callTranscript").innerHTML =
+        `<span class="him">${escapeHtml(cleanTags(msg.chinese))}</span>`;
+
+      let audioUrl = null, savedAudioId = null;
+      try {
+        const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
+          body: safeStringify({
+            model: MIMO_TTS_MODEL,
+            messages: [
+              { role: "assistant", content: msg.english }
+            ],
+            audio: { format: "wav", voice: MIMO_TTS_VOICE }
+          })
+        });
+        if (!ttsRes.ok) console.error("MiMo TTS error:", ttsRes.status, await ttsRes.text().catch(() => ""));
+        if (ttsRes.ok) {
+          const ttsData = await ttsRes.json();
+          const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
+          if (audioBase64) {
+            const binaryStr = atob(audioBase64);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+            const ab = new Blob([bytes], { type: "audio/wav" });
+            audioUrl = URL.createObjectURL(ab);
+            savedAudioId = "audio_" + Date.now();
+            await AudioDB.save(savedAudioId, ab);
+          }
+        }
+      } catch(e) {}
+
+      appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
+
+      if (audioUrl && isInCall) {
+        await new Promise(resolve => {
+          const audio = new Audio(audioUrl);
+          currentAudio = audio;
+          audio.onended = () => { currentAudio = null; resolve(); };
+          audio.onerror = () => { currentAudio = null; resolve(); };
+          audio.play().catch(resolve);
+        });
+      }
+    }
+
+    const resumeListening = () => {
+      subtitle.classList.remove("visible");
+      isBusy = false;
+      if (isInCall) { callWaiting = false; startListeningInCall(); }
+    };
+    resumeListening();
+
+  } catch(err) {
+    console.error("Call audio error:", err);
+    // Fallback: try ASR + text path
+    document.getElementById("callStatus").textContent = "音频理解失败，尝试文字识别...";
+    try {
+      const text = await asrPromise || await transcribeWithMiMo(audioBlob);
+      if (text && isInCall) {
+        handleCallMessage(text);
+        return;
+      }
+    } catch(e2) {
+      console.warn("ASR fallback also failed:", e2);
+    }
     document.getElementById("callStatus").textContent = "出错了，继续聆听...";
     isBusy = false;
     if (isInCall) { callWaiting = false; setTimeout(startListeningInCall, 1500); }
