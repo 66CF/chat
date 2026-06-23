@@ -533,30 +533,8 @@ async function handleCallMessage(text) {
     function ensureTTS(index, english) {
       if (ttsPromises.has(index)) return;
       ttsPromises.set(index, (async () => {
-        try {
-          const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
-            body: safeStringify({
-              model: MIMO_TTS_MODEL,
-              messages: [{ role: "assistant", content: english }],
-              audio: { format: "wav", voice: MIMO_TTS_VOICE }
-            })
-          });
-          if (!ttsRes.ok) { console.error("TTS error:", ttsRes.status); return; }
-          const ttsData = await ttsRes.json();
-          const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
-          if (audioBase64) {
-            const binaryStr = atob(audioBase64);
-            const bytes = new Uint8Array(binaryStr.length);
-            for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
-            const ab = new Blob([bytes], { type: "audio/wav" });
-            const audioUrl = URL.createObjectURL(ab);
-            const savedAudioId = "audio_" + Date.now() + "_" + index;
-            await AudioDB.save(savedAudioId, ab);
-            ttsResults.set(index, { audioUrl, savedAudioId });
-          }
-        } catch(e) { console.warn("TTS error for msg", index, e); }
+        const result = await fetchTTSForMessage(english, index);
+        if (result.audioUrl) ttsResults.set(index, result);
       })());
     }
 

@@ -252,7 +252,7 @@ function parseMiMoResponse(rawText) {
 }
 
 // Display multiple messages with sequential TTS
-// === TTS Helper: fetch TTS for a single message ===
+// === TTS Helper: fetch TTS for a single message (streaming PCM16 → WAV) ===
 async function fetchTTSForMessage(english, index) {
   try {
     const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
@@ -261,22 +261,80 @@ async function fetchTTSForMessage(english, index) {
       body: safeStringify({
         model: MIMO_TTS_MODEL,
         messages: [{ role: "assistant", content: english }],
-        audio: { format: "wav", voice: MIMO_TTS_VOICE }
+        audio: { format: "pcm16", voice: MIMO_TTS_VOICE },
+        stream: true
       })
     });
     if (!ttsRes.ok) { console.error("MiMo TTS error:", ttsRes.status); return { audioUrl: null, savedAudioId: null }; }
-    const ttsData = await ttsRes.json();
-    const audioBase64 = ttsData.choices?.[0]?.message?.audio?.data;
-    if (audioBase64) {
-      const binaryStr = atob(audioBase64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
-      const ab = new Blob([bytes], { type: "audio/wav" });
-      const audioUrl = URL.createObjectURL(ab);
-      const savedAudioId = "audio_" + Date.now() + "_" + index;
-      AudioDB.save(savedAudioId, ab).catch(e => console.warn("DB save error:", e));
-      return { audioUrl, savedAudioId };
+
+    // Collect PCM16 chunks from SSE stream
+    const reader = ttsRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    const pcmChunks = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(":")) continue;
+        if (trimmed === "data: [DONE]") continue;
+        if (trimmed.startsWith("data: ")) {
+          try {
+            const chunk = JSON.parse(trimmed.slice(6));
+            const audioData = chunk.choices?.[0]?.delta?.audio?.data;
+            if (audioData) {
+              const pcmBytes = atob(audioData);
+              const pcmArr = new Uint8Array(pcmBytes.length);
+              for (let k = 0; k < pcmBytes.length; k++) pcmArr[k] = pcmBytes.charCodeAt(k);
+              pcmChunks.push(pcmArr);
+            }
+          } catch(e) {}
+        }
+      }
     }
+
+    if (pcmChunks.length === 0) return { audioUrl: null, savedAudioId: null };
+
+    // Concatenate all PCM16 chunks
+    const totalLen = pcmChunks.reduce((s, c) => s + c.length, 0);
+    const pcmData = new Uint8Array(totalLen);
+    let offset = 0;
+    for (const chunk of pcmChunks) { pcmData.set(chunk, offset); offset += chunk.length; }
+
+    // Build WAV file (24kHz, 16-bit, mono)
+    const sampleRate = 24000;
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+    const blockAlign = numChannels * bitsPerSample / 8;
+    const wavBuffer = new ArrayBuffer(44 + pcmData.length);
+    const view = new DataView(wavBuffer);
+    function writeStr(off, s) { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); }
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + pcmData.length, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeStr(36, "data");
+    view.setUint32(40, pcmData.length, true);
+    new Uint8Array(wavBuffer, 44).set(pcmData);
+
+    const ab = new Blob([wavBuffer], { type: "audio/wav" });
+    const audioUrl = URL.createObjectURL(ab);
+    const savedAudioId = "audio_" + Date.now() + "_" + index;
+    AudioDB.save(savedAudioId, ab).catch(e => console.warn("DB save error:", e));
+    return { audioUrl, savedAudioId };
   } catch(e) { console.warn("TTS error for msg", index, e); }
   return { audioUrl: null, savedAudioId: null };
 }
