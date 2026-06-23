@@ -58,6 +58,9 @@ const Debug = {
     document.body.classList.remove('debug-mode');
     this._updateBtn(false);
     this._hidePanel();
+    // Return focus to chat input
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput && !chatInput.disabled) chatInput.focus();
   },
 
   // --- Logging API ---

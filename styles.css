@@ -152,6 +152,7 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: padding-right 0.25s ease;
   }
 
   /* Setup */
@@ -1754,13 +1755,9 @@
   color: var(--text-dim, #666);
 }
 
-/* --- Debug mode: shift chat area to make room --- */
-.debug-mode .chat-area {
-  margin-right: 0;
-}
-
-.debug-mode .input-area {
-  margin-right: 0;
+/* --- Debug mode: shift main layout to make room for panel --- */
+.debug-mode {
+  padding-right: 480px;
 }
 
 /* --- Responsive: on small screens, debug panel overlays --- */
@@ -1768,5 +1765,8 @@
   .debug-panel {
     width: 100vw;
     max-width: 100vw;
+  }
+  .debug-mode {
+    padding-right: 0;
   }
 }
