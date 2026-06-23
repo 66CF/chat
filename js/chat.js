@@ -251,6 +251,20 @@ function parseMiMoResponse(rawText) {
   return msgs;
 }
 
+// Apply the same filtering as parseMiMoResponse, but on already-parsed messages.
+// Used to avoid re-parsing JSON when messages were already extracted during streaming.
+function filterParsedMessages(msgs) {
+  msgs = msgs.filter(m => {
+    const eng = cleanTags(m.english || "").trim();
+    if (!eng) return false;
+    const withoutEmoji = eng.replace(/[\p{Emoji}\p{Emoji_Presentation}\p{Extended_Pictographic}\s]/gu, "");
+    if (!withoutEmoji) return false;
+    return true;
+  });
+  if (msgs.length === 0) msgs = [{ english: "hmm...", chinese: "嗯..." }];
+  return msgs;
+}
+
 // Display multiple messages with sequential TTS
 // === TTS Helper: fetch TTS for a single message (streaming PCM16 → WAV) ===
 async function fetchTTSForMessage(english, index) {
@@ -996,8 +1010,11 @@ async function sendMessage() {
 
       // === Streaming + Parallel TTS ===
       // Fire TTS as soon as each complete message is detected in the stream
+      // Cache parsed messages during streaming to avoid re-parsing with parseMiMoResponse
       const ttsPromisesMap = new Map();  // index → Promise<{audioUrl, savedAudioId}>
       let detectedCount = 0;
+      let ttsStartedCount = 0;          // early TTS via english-field detection
+      let cachedParsedMsgs = [];         // cached from extractCompleteMessages
 
       function ensureTTS(index, english) {
         if (ttsPromisesMap.has(index)) return;
@@ -1010,17 +1027,25 @@ async function sendMessage() {
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
         tools: getWebSearchTool(),
         onChunk: (accumulated) => {
-          const msgs = extractCompleteMessages(accumulated);
-          for (let i = detectedCount; i < msgs.length; i++) {
+          cachedParsedMsgs = extractCompleteMessages(accumulated);
+          detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+          // Early TTS: fire as soon as english field is closed in stream
+          // (before the full JSON object with "chinese" finishes arriving)
+          const readyEnglish = extractReadyEnglish(accumulated);
+          for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
             document.getElementById("statusBar").textContent =
               `正在思考... (${i + 1}条已缓存)`;
-            ensureTTS(i, msgs[i].english);
+            ensureTTS(i, readyEnglish[i]);
           }
-          detectedCount = Math.max(detectedCount, msgs.length);
+          ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
         }
       });
 
-      const messages = parseMiMoResponse(rawText);
+      // Reuse cached messages from streaming if available, skip re-parsing
+      const messages = cachedParsedMsgs.length > 0
+        ? filterParsedMessages(cachedParsedMsgs)
+        : parseMiMoResponse(rawText);
 
       // Ensure all TTS jobs are started (catch any missed in stream)
       for (let i = 0; i < messages.length; i++) {
@@ -1368,6 +1393,8 @@ async function sendAllStaged() {
     // === Streaming + Parallel TTS ===
     const ttsPromisesMap = new Map();
     let detectedCount = 0;
+    let ttsStartedCount = 0;
+    let cachedParsedMsgs = [];
     function ensureTTS(index, english) {
       if (ttsPromisesMap.has(index)) return;
       ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
@@ -1379,14 +1406,20 @@ async function sendAllStaged() {
         max_tokens: (currentGame && currentGame.type === "story_relay") ? 1200 : 650,
         tools: getWebSearchTool(),
         onChunk: (accumulated) => {
-          const msgs = extractCompleteMessages(accumulated);
-          for (let i = detectedCount; i < msgs.length; i++) {
-            ensureTTS(i, msgs[i].english);
+          cachedParsedMsgs = extractCompleteMessages(accumulated);
+          detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+          // Early TTS: fire as soon as english field is closed in stream
+          const readyEnglish = extractReadyEnglish(accumulated);
+          for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
+            ensureTTS(i, readyEnglish[i]);
           }
-          detectedCount = Math.max(detectedCount, msgs.length);
+          ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
         }
       });
-      const messages = parseMiMoResponse(rawText);
+      const messages = cachedParsedMsgs.length > 0
+        ? filterParsedMessages(cachedParsedMsgs)
+        : parseMiMoResponse(rawText);
 
     // Ensure all TTS jobs are started
     for (let i = 0; i < messages.length; i++) {

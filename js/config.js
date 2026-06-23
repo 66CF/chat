@@ -204,3 +204,23 @@ function extractCompleteMessages(text) {
 
   return messages;
 }
+
+// Extract english text from messages where the "english" field value is fully closed
+// in the stream, even if the rest of the JSON object ("chinese", etc.) hasn't arrived yet.
+// This allows TTS to fire earlier — as soon as the english sentence is complete.
+function extractReadyEnglish(text) {
+  const messages = [];
+  let s = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+  const arrStart = s.indexOf("[");
+  if (arrStart === -1) return messages;
+  s = s.substring(arrStart + 1);
+
+  // Match {"english":"<value>"  — the closing " proves the english field is complete
+  const regex = /\{\s*"english"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  let match;
+  while ((match = regex.exec(s)) !== null) {
+    // Unescape JSON string escapes (\" → ", \\ → \)
+    messages.push(match[1].replace(/\\(.)/g, "$1"));
+  }
+  return messages;
+}

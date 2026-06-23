@@ -529,6 +529,8 @@ async function handleCallMessage(text) {
     const ttsResults = new Map();   // index → { audioUrl, savedAudioId }
     const ttsPromises = new Map();  // index → Promise
     let detectedCount = 0;
+    let ttsStartedCount = 0;
+    let cachedParsedMsgs = [];
 
     function ensureTTS(index, english) {
       if (ttsPromises.has(index)) return;
@@ -538,24 +540,30 @@ async function handleCallMessage(text) {
       })());
     }
 
-    // Streaming LLM call — onChunk fires TTS for each new complete message
+    // Streaming LLM call — onChunk fires TTS as soon as english field is ready
     const rawText = await callMiMoAPIStream({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 650,
       onChunk: (accumulated) => {
-        const msgs = extractCompleteMessages(accumulated);
-        for (let i = detectedCount; i < msgs.length; i++) {
+        cachedParsedMsgs = extractCompleteMessages(accumulated);
+        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+        // Early TTS: fire as soon as english field is closed in stream
+        const readyEnglish = extractReadyEnglish(accumulated);
+        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
           document.getElementById("callStatus").textContent =
             `正在思考... (${i + 1}条已缓存)`;
-          ensureTTS(i, msgs[i].english);
+          ensureTTS(i, readyEnglish[i]);
         }
-        detectedCount = Math.max(detectedCount, msgs.length);
+        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
       }
     });
 
-    // Parse final messages
-    const messages = parseMiMoResponse(rawText);
+    // Reuse cached messages from streaming if available, skip re-parsing
+    const messages = cachedParsedMsgs.length > 0
+      ? filterParsedMessages(cachedParsedMsgs)
+      : parseMiMoResponse(rawText);
 
     // Ensure all TTS jobs are started (catch any missed in stream)
     for (let i = 0; i < messages.length; i++) {
