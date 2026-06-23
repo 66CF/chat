@@ -104,9 +104,52 @@ function safeStringify(obj, replacer, space) {
 }
 
 function saveChatHistory() {
-  // Save to memory library folder only (no more localStorage)
+  // Save to memory library folder if connected
   if (memoryEnabled && memoryDirHandle) {
     scheduleMemorySave();
+  }
+  
+  // Also save to localStorage as fallback (for refresh persistence)
+  try {
+    // Limit to last 200 messages to avoid localStorage quota issues
+    const maxMessages = 200;
+    const recentMessages = chatMessages.slice(-maxMessages);
+    const recentHistory = conversationHistory.slice(-maxMessages);
+    
+    const chatData = {
+      chatMessages: recentMessages,
+      conversationHistory: recentHistory,
+      timestamp: Date.now()
+    };
+    
+    // Use safeStringify to handle emoji/kaomoji properly
+    localStorage.setItem("vbc_chat_backup", safeStringify(chatData));
+  } catch(e) {
+    console.warn("Failed to save chat to localStorage:", e);
+  }
+}
+
+function loadChatHistoryFromStorage() {
+  // Only load if memory library hasn't already loaded data
+  if (memoryLoaded || chatMessages.length > 0) return false;
+  
+  try {
+    const saved = localStorage.getItem("vbc_chat_backup");
+    if (!saved) return false;
+    
+    const data = JSON.parse(saved);
+    if (data.chatMessages && Array.isArray(data.chatMessages)) {
+      chatMessages = data.chatMessages;
+    }
+    if (data.conversationHistory && Array.isArray(data.conversationHistory)) {
+      conversationHistory = data.conversationHistory;
+    }
+    
+    console.log(`Loaded ${chatMessages.length} messages from localStorage backup`);
+    return chatMessages.length > 0;
+  } catch(e) {
+    console.warn("Failed to load chat from localStorage:", e);
+    return false;
   }
 }
 

@@ -83,12 +83,18 @@ async function startChat() {
   // Restore chat messages (memory library > localStorage)
   // Load chat history from memory library
   if (!memoryLoaded && !memoryEnabled) {
-    // No memory library connected — hint user
-    setTimeout(() => {
-      if (!memoryEnabled) {
-        document.getElementById("statusBar").textContent = "💡 点击「📁 记忆库」设置本地文件夹保存记忆";
-      }
-    }, 3000);
+    // No memory library connected — try loading from localStorage backup
+    const loadedFromBackup = loadChatHistoryFromStorage();
+    if (loadedFromBackup) {
+      document.getElementById("statusBar").textContent = "✅ 已从本地缓存恢复聊天记录";
+    } else {
+      // No backup either — hint user
+      setTimeout(() => {
+        if (!memoryEnabled) {
+          document.getElementById("statusBar").textContent = "💡 点击「📁 记忆库」设置本地文件夹保存记忆";
+        }
+      }, 3000);
+    }
   }
 
   if (chatMessages.length > 0) {
