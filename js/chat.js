@@ -221,6 +221,7 @@ function onChatScrollTop() {
 
 // Parse MiMo response: handles both array and single object
 function parseMiMoResponse(rawText) {
+  Debug.debug_log('parse', `parseMiMoResponse: ${rawText?.length || 0} chars`);
   const clean = (rawText || "").replace(/```json|```/g, "").trim();
   if (!clean) throw new Error("API 返回为空");
   let msgs;
@@ -235,6 +236,7 @@ function parseMiMoResponse(rawText) {
     if (engM && chnM) {
       msgs = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
     } else {
+      Debug.logParse('error', clean.slice(0, 300));
       throw new Error("回复解析失败: " + clean.slice(0, 300));
     }
   }
@@ -248,6 +250,7 @@ function parseMiMoResponse(rawText) {
     return true;
   });
   if (msgs.length === 0) msgs = [{ english: "hmm...", chinese: "嗯..." }];
+  Debug.logParse('success', `${msgs.length}条消息`);
   return msgs;
 }
 
@@ -867,6 +870,7 @@ async function sendMessage() {
   }
   
   isBusy = true;
+  Debug.info('chat', `sendMessage: "${text?.slice(0, 50) || (hasImage ? '[图片]' : '[文件]')}" (image=${hasImage}, file=${hasFile})`);
 
   const imageData = pendingImage ? { ...pendingImage } : null;
   const fileData = pendingFile ? { ...pendingFile } : null;
@@ -1067,6 +1071,7 @@ async function sendMessage() {
 
   } catch (err) {
     console.error(err);
+    Debug.error('chat', `sendMessage 失败: ${err.message}`, err.stack);
     setLoading(false);
     showError(err.message);
     document.getElementById("statusBar").textContent = "在线 · 语音已连接";

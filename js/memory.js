@@ -535,19 +535,23 @@ async function buildSystemWithRecall(userText) {
   }
 
   let recallBlock = "";
+  const recallStart = performance.now();
   try {
     if (ImprintMemory.chunks.length > 0) {
       const recalled = await ImprintMemory.surfacingSearch(userText);
       if (recalled) {
+        Debug.logRecall(userText, ImprintMemory.chunks.length, performance.now() - recallStart);
         recallBlock = `\n\n<recall>
 以下是你的长期记忆中，与【用户称呼代词】当前消息可能相关的片段。这些是过去对话的摘要，不是【用户称呼代词】现在说的话。
 自然地运用这些背景知识来回应，但绝对不要说"你之前说过一样的话"或"你又说了同样的内容"之类的。
 即使内容相似，也要当作自然的回忆来处理，而不是指出【用户称呼代词】在重复：
 ${recalled}
 </recall>`;
+      } else {
+        Debug.debug_log('recall', `无匹配记忆 (${(performance.now() - recallStart).toFixed(0)}ms)`);
       }
     }
-  } catch (e) { console.warn("[Imprint] Recall error:", e); }
+  } catch (e) { console.warn("[Imprint] Recall error:", e); Debug.warn('recall', '记忆召回错误', e.message); }
 
   // Diary awareness
   let diaryBlock = "";

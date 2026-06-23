@@ -1300,3 +1300,473 @@
     .reply-preview-bar { padding: 6px 14px; }
     .staged-bar { padding: 8px 14px; }
   }
+
+/* ============================================================
+   === Debug Mode ===
+   ============================================================ */
+
+.debug-mode .debug-panel { display: flex !important; }
+
+.debug-panel {
+  display: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 90vw;
+  background: var(--bg-card, #1a1a2e);
+  border-left: 2px solid var(--border, #333);
+  z-index: 10000;
+  flex-direction: column;
+  font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--text, #e0e0e0);
+  box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+}
+
+.debug-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border, #333);
+  background: var(--bg-secondary, #16213e);
+  flex-shrink: 0;
+}
+
+.debug-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.debug-tab {
+  padding: 4px 10px;
+  border: 1px solid var(--border, #333);
+  background: transparent;
+  color: var(--text-dim, #888);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.debug-tab:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.debug-tab.active {
+  background: var(--accent, #c4956a);
+  color: #fff;
+  border-color: var(--accent, #c4956a);
+}
+
+.debug-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.debug-auto-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-dim, #888);
+  cursor: pointer;
+}
+
+.debug-auto-scroll input {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+}
+
+.debug-btn-sm {
+  padding: 2px 8px;
+  border: 1px solid var(--border, #333);
+  background: transparent;
+  color: var(--text-dim, #888);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+}
+
+.debug-btn-sm:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text, #e0e0e0);
+}
+
+.debug-panel-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-dim, #888);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+
+.debug-panel-close:hover {
+  color: #e74c3c;
+}
+
+.debug-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.debug-panel-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 10px;
+  border-top: 1px solid var(--border, #333);
+  background: var(--bg-secondary, #16213e);
+  font-size: 10px;
+  color: var(--text-dim, #888);
+  flex-shrink: 0;
+}
+
+.debug-hint {
+  opacity: 0.5;
+}
+
+/* --- Logs Tab --- */
+.debug-log-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border, #333);
+  background: var(--bg-secondary, #16213e);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.debug-filter-input {
+  flex: 1;
+  padding: 3px 8px;
+  border: 1px solid var(--border, #333);
+  background: var(--bg, #0f0f23);
+  color: var(--text, #e0e0e0);
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+
+.debug-filter-input:focus {
+  border-color: var(--accent, #c4956a);
+}
+
+.debug-log-count {
+  font-size: 10px;
+  color: var(--text-dim, #888);
+  white-space: nowrap;
+}
+
+.debug-log-list {
+  padding: 4px 0;
+}
+
+.debug-log-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.debug-log-entry:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.debug-log-time {
+  color: var(--text-dim, #666);
+  font-size: 10px;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.debug-log-level {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  min-width: 36px;
+  text-align: center;
+}
+
+.debug-log-entry.info .debug-log-level { color: #4a9; background: rgba(68,170,153,0.15); }
+.debug-log-entry.warn .debug-log-level { color: #e8a838; background: rgba(232,168,56,0.15); }
+.debug-log-entry.error .debug-log-level { color: #e74c3c; background: rgba(231,76,60,0.15); }
+.debug-log-entry.debug .debug-log-level { color: #888; background: rgba(136,136,136,0.1); }
+
+.debug-log-cat {
+  color: var(--accent, #c4956a);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.debug-log-msg {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.debug-log-detail {
+  width: 100%;
+  padding: 6px 8px;
+  margin: 4px 0;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 10px;
+  color: var(--text-dim, #aaa);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* --- Requests Tab --- */
+.debug-req-list {
+  padding: 4px 0;
+}
+
+.debug-req-entry {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.debug-req-entry:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.debug-req-entry.success { border-left: 3px solid #4a9; }
+.debug-req-entry.error { border-left: 3px solid #e74c3c; }
+.debug-req-entry.pending { border-left: 3px solid #e8a838; }
+
+.debug-req-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.debug-req-id {
+  color: var(--text-dim, #888);
+  font-weight: 700;
+  min-width: 28px;
+}
+
+.debug-req-model {
+  color: var(--accent, #c4956a);
+  font-size: 10px;
+  padding: 1px 6px;
+  background: rgba(196,149,106,0.1);
+  border-radius: 3px;
+}
+
+.debug-req-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.debug-req-status.success { color: #4a9; background: rgba(68,170,153,0.15); }
+.debug-req-status.error { color: #e74c3c; background: rgba(231,76,60,0.15); }
+.debug-req-status.pending { color: #e8a838; background: rgba(232,168,56,0.15); }
+
+.debug-req-timing {
+  font-size: 10px;
+  color: var(--text-dim, #888);
+}
+
+.debug-req-chunks {
+  font-size: 10px;
+  color: var(--text-dim, #666);
+  margin-left: auto;
+}
+
+.debug-req-detail {
+  margin-top: 6px;
+  padding: 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.debug-req-section {
+  margin-bottom: 6px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.debug-req-section b {
+  color: var(--accent, #c4956a);
+}
+
+.debug-req-section.error {
+  color: #e74c3c;
+}
+
+/* --- State Tab --- */
+.debug-state-section {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.debug-state-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text, #e0e0e0);
+}
+
+.debug-state-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.debug-state-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.debug-state-label {
+  color: var(--text-dim, #888);
+  white-space: nowrap;
+  width: 120px;
+}
+
+.debug-state-value {
+  color: var(--text, #e0e0e0);
+  word-break: break-all;
+}
+
+.debug-state-long {
+  color: var(--text-dim, #888);
+  font-size: 10px;
+  word-break: break-all;
+}
+
+/* --- History Tab --- */
+.debug-history-section {
+  padding: 10px;
+}
+
+.debug-history-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.debug-history-list {
+  max-height: none;
+}
+
+.debug-history-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+
+.debug-history-entry:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.debug-history-idx {
+  color: var(--text-dim, #666);
+  font-size: 10px;
+  min-width: 28px;
+  flex-shrink: 0;
+}
+
+.debug-history-role {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+}
+
+.debug-history-role.user { color: #5a9; background: rgba(85,170,153,0.15); }
+.debug-history-role.assistant { color: #5a8ec9; background: rgba(90,142,201,0.15); }
+.debug-history-role.system { color: #888; background: rgba(136,136,136,0.1); }
+
+.debug-history-preview {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debug-history-time {
+  color: var(--text-dim, #666);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.debug-history-detail {
+  width: 100%;
+  padding: 6px 8px;
+  margin: 4px 0;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.debug-history-detail pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 10px;
+  color: var(--text-dim, #aaa);
+}
+
+.debug-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-dim, #666);
+}
+
+/* --- Debug mode: shift chat area to make room --- */
+.debug-mode .chat-area {
+  margin-right: 0;
+}
+
+.debug-mode .input-area {
+  margin-right: 0;
+}
+
+/* --- Responsive: on small screens, debug panel overlays --- */
+@media (max-width: 768px) {
+  .debug-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
