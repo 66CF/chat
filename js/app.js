@@ -3,6 +3,25 @@ const mimoInput = document.getElementById("mimoKey");
 const googleInput = document.getElementById("googleKey");
 const startButton = document.getElementById("startBtn");
 
+// Model selection on setup page
+let setupModel = "pro"; // default
+function selectSetupModel(model) {
+  setupModel = model;
+  chatModel = model === "pro" ? MIMO_MODEL_PRO : MIMO_MODEL_FLASH;
+  document.querySelectorAll(".model-option").forEach(el => el.classList.remove("active"));
+  const opt = document.getElementById("opt-" + model);
+  if (opt) opt.classList.add("active");
+}
+
+// Restore saved model selection on page load
+(function initModelSelector() {
+  const savedModel = localStorage.getItem("vbc_model");
+  if (savedModel === MIMO_MODEL_FLASH) {
+    selectSetupModel("flash");
+  }
+  // else default "pro" is already set
+})();
+
 function checkKeys() {
   startButton.disabled = !mimoInput.value.trim();
 }
@@ -42,8 +61,7 @@ async function startChat() {
     proactiveEnabled = savedProactive !== "0"; // default on
     const savedWebSearch = localStorage.getItem("vbc_websearch");
     webSearchEnabled = savedWebSearch === "1"; // default off
-    const savedModel = localStorage.getItem("vbc_model");
-    if (savedModel === MIMO_MODEL_PRO || savedModel === MIMO_MODEL_FLASH || savedModel === MIMO_MODEL_OMNI) chatModel = savedModel;
+    // chatModel already set by setup model selector — no need to restore here
   }
   const pBtn = document.getElementById("proactiveBtn");
   pBtn.textContent = proactiveEnabled ? "💬 主动消息:开" : "💬 主动消息:关";

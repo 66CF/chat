@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>【应用标题】</title>
+<title>RK</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -361,7 +361,7 @@
 <div class="setup-overlay" id="setup">
   <div class="setup-card">
     <div style="font-size:36px;margin-bottom:16px">🎙️</div>
-    <h2>【应用标题】</h2>
+    <h2>RK</h2>
     <p>输入 API Key 就可以开始聊天<br>Key 只保存在你的浏览器本地</p>
 
     <label>MiMo API Key</label>
@@ -377,6 +377,18 @@
     <div style="font-size:11px;margin-top:6px;line-height:1.6;color:#666">
       <span id="memoryStatus">🟡 <span style="color:#c4956a">未填写时仍可聊天，但没有跨对话的长期语义记忆</span></span><br>
       <span style="color:#4a8">✓ 有 Key 才能：</span>自动记住重要事实、语义搜索回忆、智能浮现记忆
+    </div>
+
+    <label>模型选择</label>
+    <div class="model-selector" id="modelSelector">
+      <div class="model-option active" id="opt-pro" onclick="selectSetupModel('pro')">
+        <div class="model-option-name">🧠 Pro</div>
+        <div class="model-option-desc">mimo-v2.5-pro · 推理最强 · 默认</div>
+      </div>
+      <div class="model-option" id="opt-flash" onclick="selectSetupModel('flash')">
+        <div class="model-option-name">⚡ Flash</div>
+        <div class="model-option-desc">mimo-v2.5 · 响应更快 · 发图自动切换</div>
+      </div>
     </div>
 
     <div class="remember-row">
@@ -422,7 +434,7 @@
   <div class="header-right">
     <button class="call-header-btn" id="callBtn" onclick="toggleCall()" disabled>📞 通话</button>
     <button class="header-btn" id="peekBtn" onclick="toggleScreenPeek()" style="font-size:10px">👀 视监:关</button>
-    <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Flash（更快）&#10;点击切换到 Pro">⚡ Flash</button>
+    <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Pro（更强）&#10;点击切换到 Flash">🧠 Pro</button>
     <button class="header-btn" id="webSearchBtn" onclick="toggleWebSearch()" style="font-size:10px">🔍 联网:关</button>
     <button class="header-btn" id="featuresBtn" onclick="toggleFeaturesSidebar()" style="font-size:10px">📋 更多</button>
     <button class="header-btn" onclick="toggleSearchBar()" style="font-size:10px">🔎 搜索</button>

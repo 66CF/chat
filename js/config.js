@@ -37,7 +37,6 @@ let isBusy = false;
 
 const MIMO_API_URL = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions";
 const MIMO_MODEL_PRO = "mimo-v2.5-pro";
-const MIMO_MODEL_OMNI = "mimo-v2.5";
 const MIMO_MODEL_FLASH = "mimo-v2.5";
 
 async function callMiMoAPI(options) {
@@ -52,7 +51,7 @@ async function callMiMoAPI(options) {
   }
   let useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
   const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
-  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_OMNI;
+  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_FLASH;
   if (hasImage && max_tokens < 2000) max_tokens = 2000;
   const body = {
     model: useModel,
@@ -106,7 +105,7 @@ async function callMiMoAPIStream(options) {
   }
   let useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
   const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
-  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_OMNI;
+  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_FLASH;
   if (hasImage && max_tokens < 2000) max_tokens = 2000;
   const body = {
     model: useModel,
