@@ -570,8 +570,6 @@
       <button onclick="pickFile()">📎 文件</button>
     </div>
   </div>
-  <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageFile(event)" />
-  <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)" />
 </div>
 
 <div class="recording-hint" id="recordingHint">
@@ -579,6 +577,9 @@
   <div class="rec-time" id="recTime">0:00</div>
   <div style="font-size:13px;color:#aaa">松手发送，上滑取消</div>
 </div>
+
+<input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageFile(event)" />
+<input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)" />
 
 <!-- Call Overlay -->
 <div class="call-overlay hidden" id="callOverlay">

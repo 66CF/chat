@@ -1250,7 +1250,6 @@
       padding: 10px 12px 16px;
       gap: 4px;
       min-width: 0;
-      overflow: hidden;
     }
     .chat-input {
       padding: 10px 12px;
