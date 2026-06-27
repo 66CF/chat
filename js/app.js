@@ -36,6 +36,9 @@ async function startChat() {
   // Load stickers from static files
   loadStickers();
 
+  // Restore custom avatar and name from localStorage (refresh persistence)
+  restoreAvatarSettings();
+
   // Start proactive messaging & notifications
   // Only read from localStorage if memory library hasn't loaded settings already
   if (!memoryLoaded) {
@@ -658,6 +661,16 @@ async function saveAvatarSettings() {
     avatar.innerHTML = "♡";
   }
   
+  // Save to localStorage (for refresh persistence without memory library)
+  try {
+    localStorage.setItem("vbc_custom_name", name);
+    if (customAvatarUrl) {
+      localStorage.setItem("vbc_custom_avatar", customAvatarUrl);
+    } else {
+      localStorage.removeItem("vbc_custom_avatar");
+    }
+  } catch(e) { console.warn("Save avatar to localStorage error:", e); }
+  
   // Save to memory library folder
   if (memoryEnabled && memoryDirHandle) {
     try {
@@ -689,28 +702,55 @@ async function saveAvatarSettings() {
 }
 
 async function restoreAvatarSettings() {
-  if (!memoryEnabled || !memoryDirHandle) return;
+  // First try to restore from localStorage (works without memory library)
+  try {
+    const savedName = localStorage.getItem("vbc_custom_name");
+    const savedAvatar = localStorage.getItem("vbc_custom_avatar");
+    
+    if (savedName) {
+      document.getElementById("headerName").textContent = savedName;
+    }
+    if (savedAvatar) {
+      customAvatarUrl = savedAvatar;
+      document.getElementById("headerAvatar").innerHTML = `<img src="${customAvatarUrl}" />`;
+    }
+  } catch(e) { console.warn("Restore avatar from localStorage error:", e); }
+  
+  // Then try memory library (overrides localStorage if available)
+  if (!memoryEnabled || !memoryDirHandle) {
+    syncCallPageAvatar();
+    return;
+  }
   try {
     const perm = await memoryDirHandle.queryPermission({ mode: "readwrite" });
-    if (perm !== "granted") return;
+    if (perm !== "granted") {
+      syncCallPageAvatar();
+      return;
+    }
     
-    // Restore name
+    // Restore name from memory library
     try {
       const nameFile = await memoryDirHandle.getFileHandle("custom-name.txt");
       const f = await nameFile.getFile();
       const name = await f.text();
-      if (name) document.getElementById("headerName").textContent = name;
+      if (name) {
+        document.getElementById("headerName").textContent = name;
+        // Update localStorage with memory library value
+        localStorage.setItem("vbc_custom_name", name);
+      }
     } catch(e) {} // file doesn't exist = default name
     
-    // Restore avatar
+    // Restore avatar from memory library
     try {
       const imgFile = await memoryDirHandle.getFileHandle("custom-avatar.jpg");
       const f = await imgFile.getFile();
       customAvatarUrl = URL.createObjectURL(f);
       document.getElementById("headerAvatar").innerHTML = `<img src="${customAvatarUrl}" />`;
+      // Update localStorage with memory library value
+      localStorage.setItem("vbc_custom_avatar", customAvatarUrl);
     } catch(e) {} // file doesn't exist = default avatar
     syncCallPageAvatar();
-  } catch(e) { console.warn("Restore avatar error:", e); }
+  } catch(e) { console.warn("Restore avatar error:", e); syncCallPageAvatar(); }
 }
 
 // === Theme ===
