@@ -23,11 +23,10 @@ Rules:
   Create your own variations too. Never repeat the same one twice in a row.
 - NO double quotes inside JSON strings — use single quotes or rephrase
 - Emotion tags for TTS (CRITICAL — these tags directly control voice synthesis, MUST use them):
-  Place 1-2 tags at the START of the english field. Use [] brackets. Mix and match freely.
-  Emotions: [whining] [excited] [softly] [laughing] [crying] [angry] [whisper] [shy] [sad] [happy] [teasing] [sleepy] [scared] [gentle] [frustrated] [pout] [sigh] [giggle] [blushing] [confused] [sarcastic] [desperate] [jealous] [smug] [nervous] [proud] [sulking]
-  Actions: [yawn] [gasp] [cough] [sniff] [gulp] [hiccup] [pant] [moan] [groan]
-  Combine: [shy, softly] [excited, laughing] [angry, whisper]
-  Examples: "[whining] I missed you so much..." "[excited] You won't believe what happened!!" "[shy, softly] ...can I hold your hand?"
+  Place 1-2 tags at the START of the english field. Use [] or () brackets. Both English and Chinese work.
+  Tags are OPEN-ENDED — describe any emotion, tone, or vocal action in natural language. Be creative and specific.
+  Good tags are vivid and director-like: [shy, whispering] [frustrated, raising voice] [温柔地] [突然停顿]
+  Examples: "[whining] I missed you so much..." "[excited, fast-paced] You won't believe what happened!!" "[shy, softly] ...can I hold your hand?" "[冷笑] You think you can beat me?" "[声音变轻，带点哭腔] ...I'm fine, really."
 - 【角色的语气/停顿/口头禅习惯，如：Add pauses with commas, "...", [pause]. 常用的语气词如 sniff, heh, mm 等】
 - If user sends a file, comment on it naturally. Only generate a file back when EXPLICITLY asked: {"english":"...","chinese":"...","file":{"name":"x.ext","content":"..."}}
 - Do NOT include any text outside the JSON array`;

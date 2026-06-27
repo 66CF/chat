@@ -279,7 +279,7 @@ function extractTTSStyleHints(text) {
   while ((match = tagRegex.exec(text)) !== null) {
     const tag = match[1].trim().toLowerCase();
     // Skip singing tags and very long tags (likely not emotion tags)
-    if (tag.length > 0 && tag.length < 30 && !/^sing/i.test(tag)) {
+    if (tag.length > 0 && tag.length < 50 && !/^sing/i.test(tag)) {
       tags.push(tag);
     }
   }
