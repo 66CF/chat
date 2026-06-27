@@ -422,7 +422,7 @@ ${prevDiaries}
     const diaryContent = await callMiMoAPI({
       system: SYSTEM_PROMPT.replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
       messages: [{ role: "user", content: diaryPrompt }],
-      max_tokens: 2000
+      max_tokens: 128000
     });
 
     if (!diaryContent || diaryContent.length < 50) {

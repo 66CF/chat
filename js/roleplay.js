@@ -206,7 +206,7 @@ async function sendRoleplayMessage(userText) {
     const rawText = await callMiMoAPI({
       system: sysPrompt,
       messages: rpConvHistory.slice(-30),
-      max_tokens: 1200
+      max_tokens: 128000
     });
 
     rpConvHistory.push({ role: "assistant", content: rawText });
@@ -323,7 +323,7 @@ ${transcript}
   const rawText = await callMiMoAPI({
     system: "",
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 4000
+    max_tokens: 128000
   });
   return rawText;
 }

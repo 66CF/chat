@@ -171,7 +171,7 @@ async function sendDressupOutfit() {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
-      max_tokens: 650
+      max_tokens: 128000
     });
     const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });
@@ -238,7 +238,7 @@ async function sendDefaultOutfit() {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 500
+      max_tokens: 128000
     });
     const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });

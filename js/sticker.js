@@ -170,7 +170,7 @@ async function sendUserSticker(sticker) {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 500
+      max_tokens: 128000
     });
     const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });

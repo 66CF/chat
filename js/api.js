@@ -4,7 +4,7 @@
 
 async function callMiMoAPI(options) {
   const { system, messages, model, tools } = options;
-  let { max_tokens = 650 } = options;
+  let { max_tokens = 128000 } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {
@@ -58,7 +58,7 @@ function extractTextFromResponse(data) {
 // === Streaming API (SSE) — for call mode speed optimization ===
 async function callMiMoAPIStream(options) {
   const { system, messages, model, tools, onChunk } = options;
-  let { max_tokens = 650 } = options;
+  let { max_tokens = 128000 } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {

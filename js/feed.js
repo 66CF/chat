@@ -89,7 +89,7 @@ async function feedBot(emoji, foodName, extraText) {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 650
+      max_tokens: 128000
     });
     const messages = parseMiMoResponse(rawText);
     conversationHistory.push({ role: "assistant", content: rawText });

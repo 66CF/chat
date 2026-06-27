@@ -257,7 +257,7 @@ async function sendProactiveMessage() {
     const rawText = await callMiMoAPIStream({
       system: SYSTEM_PROMPT + recallBlock,
       messages: reqMsgs,
-      max_tokens: 500,
+      max_tokens: 128000,
       onChunk: (accumulated) => {
         cachedParsedMsgs = extractCompleteMessages(accumulated);
         detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
@@ -537,7 +537,7 @@ async function peekAndReact(userAsked) {
     const rawText = await callMiMoAPIStream({
       system: await buildSystemWithRecall("看屏幕"),
       messages: apiMsgs,
-      max_tokens: 500,
+      max_tokens: 128000,
       onChunk: (accumulated) => {
         cachedParsedMsgs = extractCompleteMessages(accumulated);
         detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);

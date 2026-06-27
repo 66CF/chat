@@ -185,7 +185,7 @@ async function stopVoiceRecord() {
       const rawText = await callMiMoAPIStream({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-        max_tokens: 650,
+        max_tokens: 128000,
         onChunk: (accumulated) => {
           cachedParsedMsgs = extractCompleteMessages(accumulated);
           detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
@@ -557,7 +557,7 @@ async function handleCallMessage(text) {
     const rawText = await callMiMoAPIStream({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: 650,
+      max_tokens: 128000,
       onChunk: (accumulated) => {
         cachedParsedMsgs = extractCompleteMessages(accumulated);
         detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
