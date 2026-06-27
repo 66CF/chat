@@ -246,6 +246,8 @@ async function sendProactiveMessage() {
     // === Streaming + Parallel TTS ===
     const ttsPromisesMap = new Map();
     let detectedCount = 0;
+    let ttsStartedCount = 0;
+    let cachedParsedMsgs = [];
     function ensureTTS(index, english) {
       if (ttsPromisesMap.has(index)) return;
       ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
@@ -256,38 +258,44 @@ async function sendProactiveMessage() {
       messages: reqMsgs,
       max_tokens: 500,
       onChunk: (accumulated) => {
-        const cleanPartial = accumulated.replace(/```json|```/g, "").trim();
-        const msgs = extractCompleteMessages(cleanPartial);
-        for (let i = detectedCount; i < msgs.length; i++) {
-          ensureTTS(i, msgs[i].english);
+        cachedParsedMsgs = extractCompleteMessages(accumulated);
+        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+        // Early TTS: fire as soon as english field is closed in stream
+        const readyEnglish = extractReadyEnglish(accumulated);
+        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
+          ensureTTS(i, readyEnglish[i]);
         }
-        detectedCount = Math.max(detectedCount, msgs.length);
+        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
       }
     });
-    const clean = (rawText || "").replace(/```json|```/g, "").trim();
 
-    // Parse: can be array or single object, extract "wait" from last element
+    // Parse: reuse cached messages from streaming, extract "wait" from last element
     let messages = [], waitMinutes = -1;
-    try {
-      const parsed = JSON.parse(clean);
-      if (Array.isArray(parsed)) {
-        messages = parsed;
-      } else if (parsed.english) {
-        messages = [parsed];
-      }
-      // Extract wait from last message
+    if (cachedParsedMsgs.length > 0) {
+      messages = filterParsedMessages(cachedParsedMsgs);
       const last = messages[messages.length - 1];
-      if (last && typeof last.wait === "number") {
-        waitMinutes = last.wait;
+      if (last && typeof last.wait === "number") waitMinutes = last.wait;
+    } else {
+      const clean = (rawText || "").replace(/```json|```/g, "").trim();
+      try {
+        const parsed = JSON.parse(clean);
+        if (Array.isArray(parsed)) {
+          messages = parsed;
+        } else if (parsed.english) {
+          messages = [parsed];
+        }
+        const last = messages[messages.length - 1];
+        if (last && typeof last.wait === "number") waitMinutes = last.wait;
+      } catch(e) {
+        const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const waitM = clean.match(/"wait"\s*:\s*(-?\d+)/);
+        if (engM && chnM) {
+          messages = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
+          waitMinutes = waitM ? parseInt(waitM[1]) : -1;
+        } else throw new Error("Parse error");
       }
-    } catch(e) {
-      const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-      const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-      const waitM = clean.match(/"wait"\s*:\s*(-?\d+)/);
-      if (engM && chnM) {
-        messages = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
-        waitMinutes = waitM ? parseInt(waitM[1]) : -1;
-      } else throw new Error("Parse error");
     }
 
     if (messages.length === 0) throw new Error("Empty response");
@@ -518,6 +526,8 @@ async function peekAndReact(userAsked) {
     // === Streaming + Parallel TTS ===
     const ttsPromisesMap = new Map();
     let detectedCount = 0;
+    let ttsStartedCount = 0;
+    let cachedParsedMsgs = [];
     function ensureTTS(index, english) {
       if (ttsPromisesMap.has(index)) return;
       ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
@@ -528,14 +538,21 @@ async function peekAndReact(userAsked) {
       messages: apiMsgs,
       max_tokens: 500,
       onChunk: (accumulated) => {
-        const msgs = extractCompleteMessages(accumulated);
-        for (let i = detectedCount; i < msgs.length; i++) {
-          ensureTTS(i, msgs[i].english);
+        cachedParsedMsgs = extractCompleteMessages(accumulated);
+        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+        // Early TTS: fire as soon as english field is closed in stream
+        const readyEnglish = extractReadyEnglish(accumulated);
+        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
+          ensureTTS(i, readyEnglish[i]);
         }
-        detectedCount = Math.max(detectedCount, msgs.length);
+        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
       }
     });
-    const messages = parseMiMoResponse(rawText);
+    // Reuse cached messages from streaming if available, skip re-parsing
+    const messages = cachedParsedMsgs.length > 0
+      ? filterParsedMessages(cachedParsedMsgs)
+      : parseMiMoResponse(rawText);
 
     // Ensure all TTS jobs are started
     for (let i = 0; i < messages.length; i++) {

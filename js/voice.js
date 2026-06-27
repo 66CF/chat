@@ -174,6 +174,8 @@ async function stopVoiceRecord() {
       // === Streaming + Parallel TTS ===
       const ttsPromisesMap = new Map();
       let detectedCount = 0;
+      let ttsStartedCount = 0;
+      let cachedParsedMsgs = [];
 
       function ensureTTS(index, english) {
         if (ttsPromisesMap.has(index)) return;
@@ -185,15 +187,22 @@ async function stopVoiceRecord() {
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
         max_tokens: 650,
         onChunk: (accumulated) => {
-          const msgs = extractCompleteMessages(accumulated);
-          for (let i = detectedCount; i < msgs.length; i++) {
-            ensureTTS(i, msgs[i].english);
+          cachedParsedMsgs = extractCompleteMessages(accumulated);
+          detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+
+          // Early TTS: fire as soon as english field is closed in stream
+          const readyEnglish = extractReadyEnglish(accumulated);
+          for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
+            ensureTTS(i, readyEnglish[i]);
           }
-          detectedCount = Math.max(detectedCount, msgs.length);
+          ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
         }
       });
 
-      const messages = parseMiMoResponse(rawText);
+      // Reuse cached messages from streaming if available, skip re-parsing
+      const messages = cachedParsedMsgs.length > 0
+        ? filterParsedMessages(cachedParsedMsgs)
+        : parseMiMoResponse(rawText);
 
       // Ensure all TTS jobs are started
       for (let i = 0; i < messages.length; i++) {

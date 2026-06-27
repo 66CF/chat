@@ -269,16 +269,56 @@ function filterParsedMessages(msgs) {
 }
 
 // Display multiple messages with sequential TTS
+// === TTS Style Extraction ===
+// Extract emotion/style tags from English text to build TTS style instruction
+// Tags like [whining], [excited], [softly], (laughing), etc.
+function extractTTSStyleHints(text) {
+  const tags = [];
+  const tagRegex = /[\[（(]([^)\]）]+)[\]）)]/g;
+  let match;
+  while ((match = tagRegex.exec(text)) !== null) {
+    const tag = match[1].trim().toLowerCase();
+    // Skip singing tags and very long tags (likely not emotion tags)
+    if (tag.length > 0 && tag.length < 30 && !/^sing/i.test(tag)) {
+      tags.push(tag);
+    }
+  }
+  return tags;
+}
+
+// Build a natural language style instruction for TTS from extracted tags
+function buildTTSStyleInstruction(english) {
+  const hints = extractTTSStyleHints(english);
+  if (hints.length === 0) return null;
+  // Deduplicate
+  const unique = [...new Set(hints)];
+  return `Speak with ${unique.join(", ")} tone and expression.`;
+}
+
 // === TTS Helper: fetch TTS for a single message (streaming PCM16 → WAV) ===
-async function fetchTTSForMessage(english, index) {
+async function fetchTTSForMessage(english, index, options = {}) {
+  const voice = options.voice || MIMO_TTS_VOICE;
   try {
+    // Build messages array — assistant content is the text to synthesize
+    const ttsMessages = [];
+
+    // Add user role with style instruction (v2.5 TTS supports this for tone control)
+    const styleInstruction = buildTTSStyleInstruction(english);
+    if (styleInstruction) {
+      ttsMessages.push({ role: "user", content: styleInstruction });
+    }
+
+    // Clean English text: remove *action* descriptions but keep [audio tags] for TTS
+    const ttsText = (english || "").replace(/\*[^*]+\*\s*/g, "").replace(/\s{2,}/g, " ").trim();
+    ttsMessages.push({ role: "assistant", content: ttsText || english });
+
     const ttsRes = await fetch(MIMO_API_BASE + "/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + mimoApiKey },
       body: safeStringify({
         model: MIMO_TTS_MODEL,
-        messages: [{ role: "assistant", content: english }],
-        audio: { format: "pcm16", voice: MIMO_TTS_VOICE },
+        messages: ttsMessages,
+        audio: { format: "pcm16", voice: voice },
         stream: true
       })
     });
