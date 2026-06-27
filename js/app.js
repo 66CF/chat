@@ -29,8 +29,9 @@ async function startChat() {
   document.getElementById("callBtn").disabled = false;
   document.getElementById("statusBar").textContent = "在线 · 语音已连接";
 
-  // Pre-request mic permission (one prompt at start, then never again)
-  initMicStream();
+  // NOTE: 不再预先请求麦克风权限，避免 Android 手机音量变成电话模式
+  // 麦克风权限会在用户第一次使用语音功能时延迟获取
+  // initMicStream();
 
   // Load stickers from static files
   loadStickers();

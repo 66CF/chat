@@ -439,8 +439,12 @@ function checkSilence() {
 
 async function startCall() {
   if (!mediaStream) {
-    alert("麦克风未授权，请刷新页面重试");
-    return;
+    // 延迟获取麦克风权限
+    await initMicStream();
+    if (!mediaStream) {
+      alert("麦克风未授权，请允许麦克风权限后重试");
+      return;
+    }
   }
   if (!mimoApiKey) {
     alert("语音通话需要填写 MiMo API Key 用于语音识别");
