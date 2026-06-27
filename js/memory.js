@@ -530,7 +530,7 @@ async function buildSystemWithRecall(userText) {
 可用表情包：${names}
 名字=画面内容，根据情境选最合适的。发送方式：在消息加"sticker"字段，值必须完全匹配列表名称。
 例：{"english":"hehe~","chinese":"嘿嘿~","sticker":"得意"}
-省着用！平均每10-15条消息发一次，情绪强烈时才发。
+省着用！平均每10-15条消息发一次。
 </stickers>`;
   }
 
