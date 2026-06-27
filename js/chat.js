@@ -214,60 +214,69 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: apiText });
       imprintLogTurn("user", apiText);
 
-      // === Streaming + Parallel TTS ===
-      // Fire TTS as soon as each complete message is detected in the stream
-      // Cache parsed messages during streaming to avoid re-parsing with parseMiMoResponse
-      const ttsPromisesMap = new Map();  // index → Promise<{audioUrl, savedAudioId}>
-      let detectedCount = 0;
-      let ttsStartedCount = 0;          // early TTS via english-field detection
-      let cachedParsedMsgs = [];         // cached from extractCompleteMessages
+      // === Streaming Pipeline: parse → TTS → display one by one ===
+      // Each message is displayed & played as soon as its TTS completes,
+      // without waiting for the entire response to finish.
+      const proc = createStreamMessageProcessor();
+      let completedMsgCount = 0;
+      let earlyTTSDone = 0;
+      const ttsMap = {};  // index → Promise
 
-      function ensureTTS(index, english) {
-        if (ttsPromisesMap.has(index)) return;
-        ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
+      function fireTTS(index, english) {
+        if (!ttsMap[index]) ttsMap[index] = fetchTTSForMessage(english, index);
+        return ttsMap[index];
       }
 
-      const rawText = await callMiMoAPIStream({
-        system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-        max_tokens: (currentGame && currentGame.type === "story_relay") ? 128000 : 128000,
-        tools: getWebSearchTool(),
-        onChunk: (accumulated) => {
-          cachedParsedMsgs = extractCompleteMessages(accumulated);
-          detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
+      // Run stream + display loop in parallel via Promise.all
+      const [, rawText] = await Promise.all([
+        proc.finished,
+        (async () => {
+          const rawText = await callMiMoAPIStream({
+            system: systemPrompt,
+            messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+            max_tokens: (currentGame && currentGame.type === "story_relay") ? 128000 : 128000,
+            tools: getWebSearchTool(),
+            onChunk: (accumulated) => {
+              // Detect new complete messages → fire TTS + enqueue for display
+              const msgs = extractCompleteMessages(accumulated);
+              for (let i = completedMsgCount; i < msgs.length; i++) {
+                const m = msgs[i];
+                const p = fireTTS(i, m.english);
+                proc.enqueue(m, p);
+                completedMsgCount++;
+              }
 
-          // Early TTS: fire as soon as english field is closed in stream
-          // (before the full JSON object with "chinese" finishes arriving)
-          const readyEnglish = extractReadyEnglish(accumulated);
-          for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
-            document.getElementById("statusBar").textContent =
-              `正在思考... (${i + 1}条已缓存)`;
-            ensureTTS(i, readyEnglish[i]);
+              // Also fire TTS early for english fields (before full JSON arrives)
+              const readyEnglish = extractReadyEnglish(accumulated);
+              for (let i = earlyTTSDone; i < readyEnglish.length; i++) {
+                fireTTS(i, readyEnglish[i]);
+                earlyTTSDone++;
+              }
+
+              document.getElementById("statusBar").textContent =
+                `正在思考... (${completedMsgCount}条已解析)`;
+            }
+          });
+
+          // Catch any messages not detected during streaming (fallback)
+          const finalMsgs = parseMiMoResponse(rawText);
+          for (let i = completedMsgCount; i < finalMsgs.length; i++) {
+            const m = finalMsgs[i];
+            const p = fireTTS(i, m.english);
+            proc.enqueue(m, p);
+            completedMsgCount++;
           }
-          ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
-        }
-      });
 
-      // Reuse cached messages from streaming if available, skip re-parsing
-      const messages = cachedParsedMsgs.length > 0
-        ? filterParsedMessages(cachedParsedMsgs)
-        : parseMiMoResponse(rawText);
-
-      // Ensure all TTS jobs are started (catch any missed in stream)
-      for (let i = 0; i < messages.length; i++) {
-        ensureTTS(i, messages[i].english);
-      }
+          proc.done();  // signal display loop to finish
+          return rawText;
+        })()
+      ]);
 
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
-      document.getElementById("statusBar").textContent = "正在生成语音...";
-      setLoading(false);
-      // Pass prefetched TTS promises — showMultipleMessages will reuse them
-      await showMultipleMessages(messages, ttsPromisesMap);
       lastMessageTime = Date.now();
       scheduleProactiveMessage(3);
-
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
     }
 

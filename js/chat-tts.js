@@ -1,3 +1,146 @@
+// === Message Attachment & Audio Helpers ===
+// Handle file attachment, sticker, and music action for a bot message
+async function handleMsgAttachments(msg) {
+  // File attachment
+  if (msg.file && msg.file.name && msg.file.content) {
+    const fname = msg.file.name;
+    const isPdf = fname.toLowerCase().endsWith(".pdf");
+    let dlUrl, dlName;
+    if (isPdf) {
+      try {
+        dlUrl = await createPdfFile(fname, msg.file.content);
+        dlName = fname;
+      } catch(e) {
+        console.warn("PDF generation failed, falling back to txt:", e);
+        const dl = createFileDownload(fname.replace(/\.pdf$/i, ".txt"), msg.file.content);
+        dlUrl = dl.url; dlName = dl.filename;
+      }
+    } else {
+      const dl = createFileDownload(fname, msg.file.content);
+      dlUrl = dl.url; dlName = dl.filename;
+    }
+    const area = document.getElementById("chatArea");
+    const lastRow = area.lastElementChild;
+    const bubble = lastRow.querySelector(".bubble.bot");
+    if (bubble) {
+      bubble.insertAdjacentHTML("beforeend",
+        `<a class="file-download-btn" href="${dlUrl}" download="${escapeHtml(dlName)}">📥 下载 ${escapeHtml(dlName)}</a>`
+      );
+    }
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
+      lastMsg.fileName = msg.file.name;
+      lastMsg.fileContent = msg.file.content;
+      saveChatHistory();
+    }
+  }
+
+  // Sticker
+  if (msg.sticker) {
+    const sticker = findSticker(msg.sticker);
+    if (sticker) {
+      const area = document.getElementById("chatArea");
+      const lastRow = area.lastElementChild;
+      const bubble = lastRow.querySelector(".bubble.bot");
+      if (bubble) {
+        bubble.insertAdjacentHTML("beforeend",
+          `<img class="sticker-img" src="${sticker.url}" alt="${escapeHtml(sticker.name)}" title="${escapeHtml(sticker.name)}" onclick="window.open(this.src,'_blank')" />`
+        );
+      }
+      const lastMsg = chatMessages[chatMessages.length - 1];
+      if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
+        lastMsg.stickerName = sticker.name;
+        try {
+          const resp = await fetch(sticker.url);
+          const blob = await resp.blob();
+          lastMsg.stickerDataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch(e) { console.warn("Bot sticker base64 error:", e); }
+        saveChatHistory();
+      }
+    }
+  }
+
+  // Music action
+  if (msg.music) handleBotMusicAction(msg);
+}
+
+// Play audio and wait for it to finish
+async function playAudioAndWait(audioUrl) {
+  if (!audioUrl) return;
+  await new Promise(resolve => {
+    const audio = new Audio(audioUrl);
+    currentAudio = audio;
+    audio.onended = () => { currentAudio = null; resolve(); };
+    audio.onerror = () => { currentAudio = null; resolve(); };
+    audio.play().catch(resolve);
+  });
+}
+
+/**
+ * Creates a streaming message processor — displays messages as they arrive.
+ * Usage:
+ *   const proc = createStreamMessageProcessor();
+ *   proc.enqueue(msg0, ttsPromise0);  // message appears + plays immediately
+ *   proc.enqueue(msg1, ttsPromise1);  // queued, plays after msg0 finishes
+ *   proc.done();                      // signal no more messages
+ *   await proc.finished;              // wait for all messages to be displayed
+ */
+function createStreamMessageProcessor() {
+  const queue = [];
+  let resolver = null;
+  let loadingRemoved = false;
+
+  function enqueue(msg, ttsPromise) {
+    queue.push({ msg, ttsPromise });
+    if (resolver) { const r = resolver; resolver = null; r(); }
+  }
+
+  function dequeue() {
+    if (queue.length > 0) return Promise.resolve(queue.shift());
+    return new Promise(r => { resolver = r; });
+  }
+
+  async function displayLoop() {
+    while (true) {
+      const item = await dequeue();
+      if (!item || item.msg === null) break;
+      const { msg, ttsPromise } = item;
+
+      // Remove loading bubble on first message
+      if (!loadingRemoved) {
+        setLoading(false);
+        loadingRemoved = true;
+      }
+
+      // Brief typing delay for natural feel
+      await new Promise(r => setTimeout(r, 200 + Math.random() * 150));
+
+      // Wait for TTS (usually already resolved since TTS was fired early)
+      const { audioUrl, savedAudioId } = await ttsPromise;
+
+      // Display message bubble
+      appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
+
+      // Handle file/sticker/music attachments
+      await handleMsgAttachments(msg);
+
+      // Play audio and wait for it to finish before next message
+      await playAudioAndWait(audioUrl);
+    }
+  }
+
+  return {
+    enqueue,
+    done: () => enqueue(null, null),
+    finished: displayLoop()
+  };
+}
+
 // === TTS Style Extraction ===
 // Extract emotion/style tags from English text to build TTS style instruction
 // Tags like [whining], [excited], [softly], (laughing), etc.
