@@ -1,3 +1,35 @@
+// === Bubble Replay (click bubble to replay audio) ===
+function handleBubbleReplay(bubble) {
+  const audioUrl = bubble.dataset.audioUrl;
+  const audioId = bubble.dataset.audioId;
+
+  // Stop any currently playing audio
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+
+  // Remove playing state from all other bubbles
+  document.querySelectorAll(".bubble-audio.audio-playing").forEach(b => {
+    if (b !== bubble) b.classList.remove("audio-playing");
+  });
+
+  function play(url) {
+    const audio = new Audio(url);
+    currentAudio = audio;
+    bubble.classList.add("audio-playing");
+    audio.onended = () => { bubble.classList.remove("audio-playing"); currentAudio = null; };
+    audio.onerror = () => { bubble.classList.remove("audio-playing"); currentAudio = null; };
+    audio.play().catch(() => { bubble.classList.remove("audio-playing"); });
+  }
+
+  if (audioUrl) {
+    play(audioUrl);
+  } else if (audioId) {
+    AudioDB.load(audioId).then(blob => {
+      if (!blob) return;
+      play(URL.createObjectURL(blob));
+    });
+  }
+}
+
 // === Replay Audio ===
 function replayAudio(btn, audioUrl) {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }

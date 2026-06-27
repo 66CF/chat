@@ -355,21 +355,19 @@ function appendBotMessage(english, chinese, audioUrl, save, audioId, time, quote
   const row = document.createElement("div");
   row.className = "msg-row bot";
 
-  const btnId = "btn-" + Date.now() + Math.random().toString(36).slice(2, 6);
-  const dataAttr = audioId ? ` data-audio-id="${audioId}"` : "";
-
-  let audioBtn;
-  if (audioUrl) {
-    audioBtn = `<button class="replay-btn" id="${btnId}"${dataAttr} onclick="replayAudio(this, '${audioUrl}')">🔈 再听一次</button>`;
-  } else if (audioId) {
-    audioBtn = `<button class="replay-btn" id="${btnId}"${dataAttr} onclick="replayFromDB(this, '${audioId}')">🔈 再听一次</button>`;
-  } else {
-    audioBtn = `<span style="font-size:11px;color:#555;margin-top:6px;display:block">（语音不可用）</span>`;
-  }
+  const hasAudio = !!(audioUrl || audioId);
+  const audioAttr = audioUrl ? ` data-audio-url="${escapeHtml(audioUrl)}"` : "";
+  const idAttr = audioId ? ` data-audio-id="${audioId}"` : "";
+  const bubbleClass = hasAudio ? "bubble bot bubble-audio" : "bubble bot";
 
   const quoteHtml = quoteData ? buildQuoteBlockHtml(quoteData) : "";
 
-  row.innerHTML = `<div class="bubble bot">${quoteHtml}<div class="english">${escapeHtml(english)}</div><div class="chinese">${escapeHtml(chinese)}</div>${audioBtn}</div><div class="msg-time">${formatMsgTime(ts)}</div>`;
+  row.innerHTML = `<div class="${bubbleClass}"${audioAttr}${idAttr}>${quoteHtml}<div class="english">${escapeHtml(english)}</div><div class="chinese">${escapeHtml(chinese)}</div></div><div class="msg-time">${formatMsgTime(ts)}</div>`;
+
+  if (hasAudio) {
+    const bubble = row.querySelector(".bubble");
+    bubble.addEventListener("click", () => handleBubbleReplay(bubble));
+  }
   area.appendChild(row);
   area.scrollTop = area.scrollHeight;
 

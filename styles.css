@@ -315,13 +315,9 @@
   }
   .english { color: var(--text-primary); margin-bottom: 6px; font-style: italic; }
   .chinese { color: var(--text-secondary); font-size: 13px; }
-  .replay-btn {
-    margin-top: 8px; padding: 4px 12px; font-size: 12px;
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 8px; color: var(--accent); cursor: pointer;
-    transition: background 0.2s;
-  }
-  .replay-btn:hover { background: var(--bg-card); }
+  .bubble-audio { cursor: pointer; transition: box-shadow 0.2s, border-color 0.2s; }
+  .bubble-audio:hover { box-shadow: 0 0 0 1px var(--accent-border); }
+  .bubble-audio.audio-playing { box-shadow: 0 0 8px var(--accent-glow); border-color: var(--accent); }
 
   .msg-time {
     font-size: 10px; color: var(--text-dim); margin-top: 3px;
