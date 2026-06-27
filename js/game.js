@@ -267,22 +267,5 @@ RULES: React naturally to 【用户称呼代词的所有格】 cooking decisions
   return "";
 }
 
-function findSticker(name) {
-  if (!name || stickerCatalog.length === 0) return null;
-  const lower = name.toLowerCase().trim();
-  // 1. Exact match
-  let match = stickerCatalog.find(s => s.name.toLowerCase() === lower);
-  if (match) return match;
-  // 2. Name contains query or query contains name
-  match = stickerCatalog.find(s => s.name.toLowerCase().includes(lower) || lower.includes(s.name.toLowerCase()));
-  if (match) return match;
-  // 3. Fuzzy: any sticker name shares 2+ characters with query
-  match = stickerCatalog.find(s => {
-    const sn = s.name.toLowerCase();
-    let shared = 0;
-    for (const ch of lower) { if (sn.includes(ch)) shared++; }
-    return shared >= Math.min(2, lower.length);
-  });
-  return match || null;
-}
+
 
