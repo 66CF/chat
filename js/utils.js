@@ -50,27 +50,6 @@ function formatMsgTime(ts) {
 }
 
 
-function setLoading(show) {
-  const existing = document.getElementById("loadingBubble");
-  if (existing) existing.remove();
-
-  if (show) {
-    const area = document.getElementById("chatArea");
-    const row = document.createElement("div");
-    row.className = "msg-row bot";
-    row.id = "loadingBubble";
-    row.innerHTML = `<div class="loading-bubble">
-      <span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>
-    </div>`;
-    area.appendChild(row);
-    area.scrollTop = area.scrollHeight;
-  }
-
-  document.getElementById("chatInput").disabled = show;
-  document.getElementById("sendBtn").disabled = show;
-}
-
-
 function showError(msg) {
   const area = document.getElementById("chatArea");
   const div = document.createElement("div");
@@ -80,20 +59,6 @@ function showError(msg) {
   area.scrollTop = area.scrollHeight;
 }
 
-
-// Content filter fallback - random cute lyrics
-function getRandomLyricFallback() {
-  const lyrics = [
-    /* 【在此填入角色的哼歌/唱歌台词列表，格式如下：
-    { english: "[singing] 英文歌词~", chinese: "🎵 中文歌词~ 🎶" },
-    建议准备20-50条，涵盖开心、甜蜜、搞笑、温柔等不同情绪
-    歌词内容应符合角色性格和与用户的关系设定 */
-    { english: "[singing] La la la~ you make me smile~ every single day~", chinese: "🎵 啦啦啦~ 你让我微笑~ 每一天~ 🎶" },
-    { english: "[singing softly] Hm hm hm~ thinking of you~ wondering what you do~", chinese: "🎵 嗯嗯嗯~ 想着你~ 你在做什么呢~ 🎶" },
-    { english: "[singing] Do re mi~ fa so la~ ti do~ life is better with you~", chinese: "🎵 哆来咪~ 发嗦拉~ 西哆~ 有你生活更美好~ 🎶" },
-  ];
-  return [lyrics[Math.floor(Math.random() * lyrics.length)]];
-}
 
 
 function showToast(msg, duration) {

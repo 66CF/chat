@@ -1271,19 +1271,7 @@ function clearReply() {
 let batchMode = false;
 let stagedMessages = []; // { text, quoteData, imageData, fileData }
 
-function showToast(msg, duration) {
-  let el = document.getElementById("globalToast");
-  if (!el) {
-    el = document.createElement("div");
-    el.className = "toast";
-    el.id = "globalToast";
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove("show"), duration || 1200);
-}
+
 
 function toggleBatchMode() {
   batchMode = !batchMode;
