@@ -97,29 +97,37 @@ async function callMiMoAPIStream(options) {
   let buffer = "";
   let accumulated = "";
 
+  function handleSSELine(line) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith(":")) return;
+    if (trimmed === "data: [DONE]") return;
+
+    if (trimmed.startsWith("data: ")) {
+      try {
+        const chunk = JSON.parse(trimmed.slice(6));
+        const delta = chunk.choices?.[0]?.delta;
+        if (delta?.content) {
+          accumulated += delta.content;
+          if (onChunk) onChunk(accumulated);
+        }
+      } catch(e) {}
+    }
+  }
+
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      buffer += decoder.decode();
+      if (buffer.trim()) handleSSELine(buffer);
+      break;
+    }
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
 
     for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith(":")) continue;
-      if (trimmed === "data: [DONE]") continue;
-
-      if (trimmed.startsWith("data: ")) {
-        try {
-          const chunk = JSON.parse(trimmed.slice(6));
-          const delta = chunk.choices?.[0]?.delta;
-          if (delta?.content) {
-            accumulated += delta.content;
-            if (onChunk) onChunk(accumulated);
-          }
-        } catch(e) {}
-      }
+      handleSSELine(line);
     }
   }
 
