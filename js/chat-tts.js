@@ -175,7 +175,7 @@ async function showMultipleMessages(messages, ttsPrefetch) {
         );
       }
       const lastMsg = chatMessages[chatMessages.length - 1];
-      if (lastMsg && lastMsg.role === "bot") {
+      if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
         lastMsg.fileName = msg.file.name;
         lastMsg.fileContent = msg.file.content;
         saveChatHistory();
@@ -196,7 +196,7 @@ async function showMultipleMessages(messages, ttsPrefetch) {
         }
         // Save sticker info in chatMessages for persistence
         const lastMsg = chatMessages[chatMessages.length - 1];
-        if (lastMsg && lastMsg.role === "bot") {
+        if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
           lastMsg.stickerName = sticker.name;
           // Convert to base64 for persistent storage
           try {

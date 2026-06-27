@@ -1020,7 +1020,7 @@ async function loadFromMemory() {
       // Match to bot chatMessages in order, with alignment verification
       let metaIdx = 0;
       for (const msg of chatMessages) {
-        if (msg.role === "bot" && metaIdx < assistantMeta.length) {
+        if ((msg.role === "bot" || msg.role === "assistant") && metaIdx < assistantMeta.length) {
           const meta = assistantMeta[metaIdx];
           // Alignment check: verify the english text roughly matches
           const msgEng = (msg.english || "").slice(0, 50);

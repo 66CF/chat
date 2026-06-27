@@ -36,7 +36,7 @@ function searchAllSources(query) {
     const msg = chatMessages[i];
     let text = "";
     if (msg.role === "user") text = msg.text || "";
-    else if (msg.role === "bot") text = msg.chinese || msg.english || "";
+    else if (msg.role === "bot" || msg.role === "assistant") text = msg.chinese || msg.english || "";
     else if (msg.role === "system") text = msg.text || "";
     if (!text) continue;
     if (text.toLowerCase().includes(q)) {

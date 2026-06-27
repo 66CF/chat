@@ -326,7 +326,7 @@ function gatherDiaryMaterial(targetDateStr) {
         if (msg.isImage) text = "[图片] " + (msg.text || "");
         if (msg.fileName) text = "[文件:" + msg.fileName + "] " + (msg.text || "");
         relevantMsgs.push({ role: "【用户称呼代词简称】", text: text.slice(0, 100) });
-      } else if (msg.role === "bot") {
+      } else if (msg.role === "bot" || msg.role === "assistant") {
         const text = (msg.chinese || msg.english || "").slice(0, 100);
         relevantMsgs.push({ role: "我", text });
       }
