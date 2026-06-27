@@ -97,7 +97,7 @@ function createStreamMessageProcessor() {
 
   function enqueue(msg, ttsPromise) {
     queue.push({ msg, ttsPromise });
-    if (resolver) { const r = resolver; resolver = null; r(); }
+    if (resolver) { const r = resolver; resolver = null; r(queue.shift()); }
   }
 
   function dequeue() {
