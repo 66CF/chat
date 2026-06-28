@@ -239,9 +239,12 @@ function deleteThisMessage(btn) {
   if (!row || !confirm("删除这条消息？")) return;
   const area = document.getElementById("chatArea");
   const allRows = Array.from(area.querySelectorAll(".msg-row"));
-  const idx = allRows.indexOf(row);
+  const domIdx = allRows.indexOf(row);
   
-  if (idx >= 0 && idx < chatMessages.length) {
+  // Adjust index for lazy loading: DOM only shows messages from chatRenderStart onward
+  const idx = chatRenderStart + domIdx;
+  
+  if (domIdx >= 0 && idx >= 0 && idx < chatMessages.length) {
     const msg = chatMessages[idx];
     // Clean up associated blobs from IndexedDB
     if (msg.audioId) AudioDB.delete(msg.audioId).catch(()=>{});
@@ -250,6 +253,18 @@ function deleteThisMessage(btn) {
     if (msg.imgId) AudioDB.delete(msg.imgId).catch(()=>{});
     
     chatMessages.splice(idx, 1);
+    
+    // Adjust chatRenderStart if we deleted a message before the rendered window
+    if (idx < chatRenderStart) {
+      chatRenderStart--;
+      // If chatRenderStart becomes 0, remove the load more banner
+      if (chatRenderStart <= 0) {
+        chatRenderStart = 0;
+        const banner = document.getElementById("loadMoreBanner");
+        if (banner) banner.remove();
+      }
+    }
+    
     saveChatHistory();
   }
   
@@ -343,7 +358,10 @@ function replyToMessage(btn) {
   if (!row) return;
   const area = document.getElementById("chatArea");
   const allRows = Array.from(area.querySelectorAll(".msg-row"));
-  const idx = allRows.indexOf(row);
+  const domIdx = allRows.indexOf(row);
+  
+  // Adjust index for lazy loading: DOM only shows messages from chatRenderStart onward
+  const idx = chatRenderStart + domIdx;
   
   let role, text;
   if (row.classList.contains("user")) {
