@@ -111,7 +111,7 @@ const ImprintMemory = {
 
     const batch = this.turnBuffer.splice(0, this.chunkSize);
     const transcript = batch.map(t => {
-      const role = t.role === "user" ? "【用户称呼代词简称，如：她/他】" : "【角色称呼代词简称，如：他/她】";
+      const role = t.role === "user" ? "用户" : characterProfile.botName || "AI";
       const time = t.time ? formatMsgTime(t.time) : "";
       return `[${time}] ${role}: ${t.content.slice(0, 200)}`;
     }).join("\n");
@@ -307,8 +307,8 @@ importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件
           } catch(e) { neighborText = neighbor.content; }
         }
 
-        const role = msg.role === "user" ? "【用户称呼代词简称】" : "【角色称呼代词简称】";
-        const neighborRole = neighbor?.role === "user" ? "【用户称呼代词简称】" : "【角色称呼代词简称】";
+        const role = msg.role === "user" ? "用户" : characterProfile.botName || "AI";
+        const neighborRole = neighbor?.role === "user" ? "用户" : characterProfile.botName || "AI";
         let display = `${role}: ${text.slice(0, 150)}`;
         if (neighborText) display += ` → ${neighborRole}: ${neighborText.slice(0, 150)}`;
 
@@ -518,7 +518,7 @@ async function buildSystemWithRecall(userText) {
   const timeBlock = `\n\n<current-time>
 【重要】现在的真实时间是 ${timeStr}（${period}）。
 你必须准确知道现在几点。绝对不要说错时间或自己编造时间。如果你要提到时间，必须和上面一致。
-根据时段自然反应：凌晨/深夜→关心【用户称呼代词】怎么还没睡、早上→早安、中午/傍晚→吃饭了吗、晚上→陪【用户称呼代词】放松。
+根据时段自然反应：凌晨/深夜→关心用户怎么还没睡、早上→早安、中午/傍晚→吃饭了吗、晚上→陪用户放松。
 不需要每条消息都提时间，但一旦提到就必须是正确的。
 </current-time>`;
 
@@ -533,9 +533,9 @@ async function buildSystemWithRecall(userText) {
       if (recalled) {
         Debug.logRecall(userText, ImprintMemory.chunks.length, performance.now() - recallStart);
         recallBlock = `\n\n<recall>
-以下是你的长期记忆中，与【用户称呼代词】当前消息可能相关的片段。这些是过去对话的摘要，不是【用户称呼代词】现在说的话。
+以下是你的长期记忆中，与用户当前消息可能相关的片段。这些是过去对话的摘要，不是用户现在说的话。
 自然地运用这些背景知识来回应，但绝对不要说"你之前说过一样的话"或"你又说了同样的内容"之类的。
-即使内容相似，也要当作自然的回忆来处理，而不是指出【用户称呼代词】在重复：
+即使内容相似，也要当作自然的回忆来处理，而不是指出用户在重复：
 ${recalled}
 </recall>`;
       } else {
@@ -563,7 +563,7 @@ ${recalled}
 ${todayDiaryExists ? "今天的日记已经写了。" : (hour >= 20 ? "今天的日记还没写，等会就写。" : "今天的日记还没到时间写（20:00才写）。")}
 你最近的日记内容（你记得自己写了什么）：
 ${diarySnippets}
-如果【用户称呼代词】问你日记的事，自然地聊。如果【用户称呼代词】在20:00前问今天的日记，告诉【用户称呼代词】还没写呢，到时间了就写。
+如果用户问你日记的事，自然地聊。如果用户在20:00前问今天的日记，告诉用户还没写呢，到时间了就写。
 </diary-info>`;
   }
 
@@ -573,7 +573,7 @@ ${diarySnippets}
     musicBlock = buildMusicContext(userText);
   }
 
-  return SYSTEM_PROMPT + timeBlock + stickerBlock + recallBlock + diaryBlock + musicBlock + getGameContext();
+  return resolveSystemPrompt() + timeBlock + stickerBlock + recallBlock + diaryBlock + musicBlock + getGameContext();
 }
 
 // --- Helper: log both sides of a turn and extract facts ---
@@ -624,7 +624,7 @@ async function retroImportHistory() {
     statusBar.textContent = `🧠 正在导入记忆 ${processed}/${totalChunks}...`;
 
     const transcript = batch.map(t => {
-      const role = t.role === "user" ? "【用户称呼代词简称，如：她/他】" : "【角色称呼代词简称，如：他/她】";
+      const role = t.role === "user" ? "用户" : characterProfile.botName || "AI";
       let text = t.content || "";
       // Try to extract Chinese from JSON responses
       try {
@@ -715,7 +715,7 @@ async function setupMemoryLib() {
       if (action === "1") { await pickMemoryDir(); }
       else if (action === "2") { disconnectMemory(); }
       else if (action === "3") { await saveToMemory(); saveSettingsToMemory(); alert("✅ 已保存到记忆库！"); }
-      else if (action === "4") { await loadFromMemory(); await restoreAvatarSettings(); await restoreOutfitFromMemory(); await loadSettingsFromMemory(); alert("✅ 已从记忆库加载！"); }
+      else if (action === "4") { await loadFromMemory(); await restoreAvatarSettings(); await restoreOutfitFromMemory(); await loadSettingsFromMemory(); await loadCharProfile(); alert("✅ 已从记忆库加载！"); }
       else if (action === "5") {
         if (ImprintMemory.turnBuffer.length < 4) {
           alert("待处理消息不足（至少需要4条），继续聊天后再试");
@@ -807,6 +807,7 @@ async function pickMemoryDir() {
         await restoreAvatarSettings();
         await restoreOutfitFromMemory();
         await loadSettingsFromMemory();
+        await loadCharProfile();
         await loadStickers();
         hideMemoryLoader();
         document.getElementById("statusBar").textContent = "✅ 已从记忆库加载";
@@ -1140,6 +1141,7 @@ async function tryRestoreMemoryHandle() {
         await restoreAvatarSettings();
         await restoreOutfitFromMemory();
         await loadSettingsFromMemory();
+        await loadCharProfile();
         await loadStickers();
         scheduleMemorySave();
         updateMemoryLoader(100, "加载完成 ✓");
@@ -1161,7 +1163,8 @@ async function tryRestoreMemoryHandle() {
             await restoreAvatarSettings();
             await restoreOutfitFromMemory();
             await loadSettingsFromMemory();
-        await loadStickers();
+            await loadCharProfile();
+            await loadStickers();
             scheduleMemorySave();
             document.getElementById("memoryBtn").onclick = setupMemoryLib;
             hideMemoryLoader();

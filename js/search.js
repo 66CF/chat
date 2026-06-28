@@ -149,7 +149,7 @@ function renderSearchResults(results, query) {
   headerHtml += `</div>`;
   container.innerHTML = headerHtml;
 
-  const headerName = document.getElementById("headerName")?.textContent || "【角色称呼代词简称】";
+  const headerName = document.getElementById("headerName")?.textContent || characterProfile.botName || "AI";
 
   for (const res of results) {
     const item = document.createElement("div");

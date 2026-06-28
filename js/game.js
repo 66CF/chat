@@ -92,13 +92,13 @@ async function startGame(type) {
     updateGameBanner();
     conversationHistory.push({ role: "assistant", content: "[开始故事接龙游戏]" });
     imprintLogTurn("assistant", "[开始了故事接龙游戏]");
-    appendBotMessage("【角色开始故事接龙时的英文台词】", "【角色开始故事接龙时的中文台词】", null, true);
+    appendBotMessage("[STORY RELAY STARTED]", "📖 故事接龙开始啦！我先来开头，你来接下去吧～", null, true);
   } else if (type === "cooking") {
     currentGame = { type: "cooking" };
     updateGameBanner();
     conversationHistory.push({ role: "assistant", content: "[开始一起做饭游戏]" });
     imprintLogTurn("assistant", "[开始了一起做饭游戏]");
-    appendBotMessage("【角色开始做饭游戏时的英文台词】", "【角色开始做饭游戏时的中文台词】", null, true);
+    appendBotMessage("[COOKING GAME STARTED]", "🍳 一起做饭开始！今天想做什么呀？你来选食材，我来帮忙！", null, true);
   }
 }
 
@@ -207,10 +207,10 @@ async function doTruthDare(choice) {
 
   try {
     const prompt = choice === "truth"
-      ? `[TRUTH OR DARE GAME - 【用户称呼代词，如：She/He】 chose TRUTH] Generate a fun, spicy but appropriate truth question for your 【用户与角色的关系】. Ask something personal, romantic, or playful that fits your relationship. Respond in your normal JSON array format.`
-      : `[TRUTH OR DARE GAME - 【用户称呼代词】 chose DARE] Generate a fun, cute dare challenge for your 【用户与角色的关系】. It should be playful and doable — something romantic, silly, or sweet. Respond in your normal JSON array format.`;
+      ? `[TRUTH OR DARE GAME - user chose TRUTH] Generate a fun, spicy but appropriate truth question for the user (your ${characterProfile.botRole || "boyfriend"}). Ask something personal, romantic, or playful that fits your relationship. Respond in your normal JSON array format.`
+      : `[TRUTH OR DARE GAME - user chose DARE] Generate a fun, cute dare challenge for the user. It should be playful and doable — something romantic, silly, or sweet. Respond in your normal JSON array format.`;
 
-    const systemPrompt = await prepareBotContext(choiceLabel, `[真心话大冒险 - 【用户称呼代词】选了${choiceLabel}]`, `[真心话大冒险] 【用户称呼代词】选了${choiceLabel}`);
+    const systemPrompt = await prepareBotContext(choiceLabel, `[真心话大冒险 - 用户选了${choiceLabel}]`, `[真心话大冒险] 用户选了${choiceLabel}`);
 
     const rawText = await callMiMoAPI({
       system: systemPrompt,
@@ -233,6 +233,13 @@ async function doTruthDare(choice) {
 // Game context injection for buildSystemWithRecall
 function getGameContext() {
   if (!currentGame) return "";
+  
+  // Resolve character info from profile or active roleplay
+  const botRole = rpActive && rpConfig ? rpConfig.botCharacter.slice(0, 30) : (characterProfile.botRole || "boyfriend");
+  const userRef = "user";
+  const proSub = "they";
+  const proPos = "their";
+  
   if (currentGame.type === "turtle_soup" && currentGame.started) {
     return `\n\n<game mode="turtle_soup">
 You are the puzzle master in a lateral thinking game (海龟汤). 
@@ -242,21 +249,21 @@ RULES: The player asks yes/no questions to figure out the truth. You can ONLY an
 - 是 (yes) — if the question matches the answer
 - 不是 (no) — if it contradicts the answer  
 - 无关 (irrelevant) — if it doesn't relate to the key facts
-Add a brief in-character reaction after each answer. Stay in your 【角色身份，如：boyfriend/girlfriend/friend】 personality. If 【用户称呼代词，如：she/he】's getting close, show excitement. If 【用户称呼代词】's way off, tease 【用户称呼代词】 gently.
+Add a brief in-character reaction after each answer. Stay in your ${botRole} personality. If the user is getting close, show excitement. If they're way off, tease them gently.
 Respond in your normal JSON array format. Keep answers SHORT — 1-2 messages max.
 </game>`;
   }
   if (currentGame.type === "story_relay") {
     return `\n\n<game mode="story_relay">
-You are co-writing a story with your 【用户与角色的关系】. 【用户称呼代词，如：She/He】 writes a part, you continue it.
-RULES: Write 2-4 paragraphs continuing the story naturally. Be creative, match 【用户称呼代词】 tone and genre. Add plot twists, vivid descriptions, or emotional moments. Stay in character as 【用户称呼代词的所有格，如：her/his】 【角色身份】 while writing — you can add cute comments before/after your story part.
+You are co-writing a story with the user. They write a part, you continue it.
+RULES: Write 2-4 paragraphs continuing the story naturally. Be creative, match their tone and genre. Add plot twists, vivid descriptions, or emotional moments. Stay in character as their ${botRole} while writing — you can add cute comments before/after your story part.
 Use longer messages than usual for the story content.
 </game>`;
   }
   if (currentGame.type === "cooking") {
     return `\n\n<game mode="cooking">
-You are cooking together with your 【用户与角色的关系】! 【用户称呼代词】 decides the ingredients and steps.
-RULES: React naturally to 【用户称呼代词的所有格】 cooking decisions. If 【用户称呼代词】's making something weird, show genuine reactions (confused, scared, excited). Comment on the process like a real 【角色身份】 in the kitchen. Be enthusiastic about good ideas, dramatically worried about bad ones. This should feel like actually cooking together.
+You are cooking together with the user! They decide the ingredients and steps.
+RULES: React naturally to their cooking decisions. If they're making something weird, show genuine reactions (confused, scared, excited). Comment on the process like a real ${botRole} in the kitchen. Be enthusiastic about good ideas, dramatically worried about bad ones. This should feel like actually cooking together.
 </game>`;
   }
   return "";

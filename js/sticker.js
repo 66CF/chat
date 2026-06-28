@@ -154,7 +154,7 @@ async function sendUserSticker(sticker) {
   saveChatHistory();
 
   // Send to MiMo as text description
-  const stickerMsg = `[【用户称呼代词】发了一个表情包：${sticker.name}]`;
+  const stickerMsg = `[用户发了一个表情包：${sticker.name}]`;
 
   // Build system prompt BEFORE pushing to history
   const systemPrompt = await prepareBotContext(stickerMsg, stickerMsg);

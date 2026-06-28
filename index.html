@@ -323,21 +323,25 @@
     <button class="features-sidebar-close" onclick="toggleFeaturesSidebar()">✕</button>
   </div>
   <div class="features-list">
+    <div class="feature-item" onclick="toggleFeaturesSidebar();openCharProfileModal()">
+      <span class="fi-icon">👤</span>
+      <div class="fi-info"><div class="fi-name">角色设定</div><div class="fi-desc">设置AI角色人设和关系</div></div>
+    </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleFeedPanel()">
       <span class="fi-icon">🍴</span>
-      <div class="fi-info"><div class="fi-name">喂食</div><div class="fi-desc">给【角色称呼代词】做好吃的</div></div>
+      <div class="fi-info"><div class="fi-name">喂食</div><div class="fi-desc">给Ta做好吃的</div></div>
     </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleDressupPanel()">
       <span class="fi-icon">👔</span>
-      <div class="fi-info"><div class="fi-name">换装</div><div class="fi-desc">帮【角色称呼代词】搭配穿搭</div></div>
+      <div class="fi-info"><div class="fi-name">换装</div><div class="fi-desc">帮Ta搭配穿搭</div></div>
     </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleDiaryPanel()">
       <span class="fi-icon">📔</span>
-      <div class="fi-info"><div class="fi-name">日记</div><div class="fi-desc">【角色名称】 的每日日记</div></div>
+      <div class="fi-info"><div class="fi-name">日记</div><div class="fi-desc">Ta 的每日日记</div></div>
     </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleMusicPanel()">
       <span class="fi-icon">🎵</span>
-      <div class="fi-info"><div class="fi-name">一起听</div><div class="fi-desc">和【角色称呼代词】一起听歌</div></div>
+      <div class="fi-info"><div class="fi-name">一起听</div><div class="fi-desc">和Ta一起听歌</div></div>
     </div>
     <div class="feature-item" onclick="toggleFeaturesSidebar();toggleGamePanel()">
       <span class="fi-icon">🎮</span>
@@ -411,13 +415,59 @@
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
     </div>
     <label>名称（备注）</label>
-    <input type="text" id="avatarNameInput" placeholder="【角色默认显示名称】" />
+    <input type="text" id="avatarNameInput" placeholder="给Ta取个昵称" />
     <div class="avatar-btns">
       <button class="primary" onclick="saveAvatarSettings()">保存</button>
       <button onclick="closeAvatarEditor()">取消</button>
     </div>
   </div>
 </div>
+
+<!-- Character Profile Editor Modal -->
+<div id="charProfileModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;overflow-y:auto" onclick="if(event.target===this)closeCharProfileModal()">
+  <div style="background:var(--bg-primary);border-radius:16px;max-width:480px;width:calc(100% - 32px);margin:40px auto;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.3);max-height:calc(100vh - 80px);overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:16px">👤 角色设定</h3>
+      <button onclick="closeCharProfileModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary)">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;background:var(--bg-secondary);padding:10px;border-radius:8px">
+      💡 设置AI角色的基本人设，所有游戏和聊天都会使用这些设定。
+    </div>
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色名称</label>
+    <input type="text" id="cpBotName" placeholder="如: MiMo、Kael、小雨" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px" />
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色外貌</label>
+    <textarea id="cpBotAppearance" placeholder="如: 25岁，180cm，银发紫瞳，半恶魔血统" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px;height:50px;resize:vertical"></textarea>
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色性格</label>
+    <textarea id="cpBotPersonality" placeholder="如: 温柔体贴、偶尔傲娇、喜欢用颜文字表达情感" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px;height:60px;resize:vertical"></textarea>
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">关系</label>
+    <select id="cpBotRole" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;font-size:14px">
+      <option value="boyfriend">男友 (boyfriend)</option>
+      <option value="girlfriend">女友 (girlfriend)</option>
+      <option value="friend">朋友 (friend)</option>
+      <option value="bestie">闺蜜 (bestie)</option>
+      <option value="pet">宠物 (pet)</option>
+      <option value="mentor">导师 (mentor)</option>
+      <option value="rival">对手 (rival)</option>
+    </select>
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">称呼你为</label>
+    <input type="text" id="cpUserName" placeholder="如: 宝贝、bunny、小傻瓜" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px" />
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色生日</label>
+    <input type="text" id="cpBotBirthday" placeholder="如: 3月15日" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px" />
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色背景</label>
+    <input type="text" id="cpBotBackground" placeholder="如: 来自异世界的半恶魔咖啡店老板" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:12px;box-sizing:border-box;font-size:14px" />
+    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px">角色代词</label>
+    <select id="cpBotPronoun" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);margin-bottom:16px;font-size:14px">
+      <option value="he">他 (he/him)</option>
+      <option value="she">她 (she/her)</option>
+      <option value="they">TA (they/them)</option>
+    </select>
+    <div style="display:flex;gap:10px">
+      <button onclick="saveCharProfile()" style="flex:1;padding:10px;background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px">保存设定</button>
+      <button onclick="closeCharProfileModal()" style="padding:10px 20px;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:14px">取消</button>
+    </div>
+  </div>
+</div>
+
   <div class="header-right">
     <button class="header-btn" id="peekBtn" onclick="toggleScreenPeek()" style="font-size:10px">👀 视监:关</button>
     <button class="header-btn" id="modelBtn" onclick="toggleModel()" style="font-size:10px" title="当前: Pro（更强）&#10;点击切换到 Flash">🧠 Pro</button>

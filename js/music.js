@@ -63,7 +63,7 @@ function renderMusicLibrary() {
   const ltClass = musicListenTogether ? "selected" : "";
   let html = `<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
     <span class="pd-opt ${ltClass}" onclick="toggleListenTogether(this)" style="font-size:11px">💑 一起听模式</span>
-    <span style="font-size:10px;color:var(--text-dim);flex:1">${musicListenTogether ? "【角色名称】 可以帮你切歌" : "开启后 【角色名称】 能看到歌单"}</span>
+    <span style="font-size:10px;color:var(--text-dim);flex:1">${musicListenTogether ? (characterProfile.botName || "Ta") + " 可以帮你切歌" : "开启后 " + (characterProfile.botName || "Ta") + " 能看到歌单"}</span>
     <button onclick="loadMusicLibrary().then(()=>renderMusicLibrary())" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text-dim);font-size:10px;cursor:pointer">🔄</button>
   </div>`;
   html += musicPlaylist.map((t, i) => {
@@ -84,7 +84,7 @@ function toggleListenTogether(el) {
   try { localStorage.setItem("vbc_music_listen_together", musicListenTogether ? "true" : "false"); } catch(e) {}
   renderMusicLibrary();
   if (musicListenTogether && musicPlaying) {
-    showToast("💑 一起听模式已开启，【角色名称】 现在能看到你的歌单了");
+    showToast("💑 一起听模式已开启，" + (characterProfile.botName || "Ta") + " 现在能看到你的歌单了");
   }
 }
 
@@ -258,7 +258,7 @@ function buildMusicContext(userText) {
     ctx += `\n切歌方法：在JSON回复中加 "music" 字段，值填歌曲名称（不需要后缀）。
 比如歌单里有"周杰伦-晴天.mp3"，你写 "music":"周杰伦-晴天" 即可。
 也可以用 "music":"next" 下一首、"music":"prev" 上一首。
-只在【用户称呼代词】让你切歌、或你主动推荐时才加music字段。\n`;
+只在用户让你切歌、或你主动推荐时才加music字段。\n`;
   }
 
   // Current session summary
@@ -278,8 +278,8 @@ function buildMusicContext(userText) {
 function handleBotMusicAction(msg) {
   if (!msg.music) return;
   const action = msg.music.trim();
-  if (action === "next") { musicNext(); appendMusicNotif("【角色名称】 切了一首歌 ⏭"); return; }
-  if (action === "prev") { musicPrev(); appendMusicNotif("【角色名称】 切了上一首 ⏮"); return; }
+  if (action === "next") { musicNext(); appendMusicNotif((characterProfile.botName || "Ta") + " 切了一首歌 ⏭"); return; }
+  if (action === "prev") { musicPrev(); appendMusicNotif((characterProfile.botName || "Ta") + " 切了上一首 ⏮"); return; }
   if (action === "pause") { if (musicAudio && musicPlaying) { musicAudio.pause(); musicPlaying = false; updateMiniPlayer(); } return; }
   if (action === "resume" || action === "play") { if (musicAudio && !musicPlaying) { musicAudio.play(); musicPlaying = true; updateMiniPlayer(); } return; }
 
@@ -312,7 +312,7 @@ function handleBotMusicAction(msg) {
 
   if (target >= 0 && target !== musicCurrentIdx) {
     playTrack(target);
-    appendMusicNotif(`【角色名称】 选了「${musicPlaylist[target].name}」🎵`);
+    appendMusicNotif(`${characterProfile.botName || "Ta"} 选了「${musicPlaylist[target].name}」🎵`);
   }
 }
 

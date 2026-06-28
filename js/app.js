@@ -38,6 +38,9 @@ async function startChat() {
   // Restore custom avatar and name from localStorage (refresh persistence)
   restoreAvatarSettings();
 
+  // Load character profile
+  loadCharProfile();
+
   // Start proactive messaging & notifications
   // Only read from localStorage if memory library hasn't loaded settings already
   if (!memoryLoaded) {
@@ -130,9 +133,97 @@ function logout() {
   location.reload();
 }
 
+// === Character Profile Editor ===
+function openCharProfileModal() {
+  const p = characterProfile;
+  document.getElementById("cpBotName").value = p.botName || "";
+  document.getElementById("cpBotAppearance").value = p.botAppearance || "";
+  document.getElementById("cpBotPersonality").value = p.botPersonality || "";
+  document.getElementById("cpBotRole").value = p.botRole || "boyfriend";
+  document.getElementById("cpUserName").value = p.userName || "";
+  document.getElementById("cpBotBirthday").value = p.botBirthday || "";
+  document.getElementById("cpBotBackground").value = p.botBackground || "";
+  document.getElementById("cpBotPronoun").value = p.botPronoun || "he";
+  document.getElementById("charProfileModal").style.display = "block";
+}
+
+function closeCharProfileModal() {
+  document.getElementById("charProfileModal").style.display = "none";
+}
+
+function saveCharProfile() {
+  characterProfile.botName = document.getElementById("cpBotName").value.trim() || "MiMo";
+  characterProfile.botAppearance = document.getElementById("cpBotAppearance").value.trim();
+  characterProfile.botPersonality = document.getElementById("cpBotPersonality").value.trim();
+  characterProfile.botRole = document.getElementById("cpBotRole").value;
+  characterProfile.userName = document.getElementById("cpUserName").value.trim() || "宝贝";
+  characterProfile.botBirthday = document.getElementById("cpBotBirthday").value.trim();
+  characterProfile.botBackground = document.getElementById("cpBotBackground").value.trim();
+  characterProfile.botPronoun = document.getElementById("cpBotPronoun").value;
+  characterProfile.displayName = characterProfile.botName;
+
+  // Update header name
+  document.getElementById("headerName").textContent = characterProfile.displayName;
+
+  // Save to localStorage
+  try {
+    localStorage.setItem("vbc_char_profile", JSON.stringify(characterProfile));
+  } catch(e) { console.warn("Save char profile error:", e); }
+
+  // Save to memory library
+  if (memoryEnabled && memoryDirHandle) {
+    (async () => {
+      try {
+        const perm = await memoryDirHandle.requestPermission({ mode: "readwrite" });
+        if (perm === "granted") {
+          const fh = await memoryDirHandle.getFileHandle("char-profile.json", { create: true });
+          const w = await fh.createWritable();
+          await w.write(JSON.stringify(characterProfile));
+          await w.close();
+        }
+      } catch(e) { console.warn("Save char profile to memory error:", e); }
+    })();
+  }
+
+  closeCharProfileModal();
+  document.getElementById("statusBar").textContent = "✅ 角色设定已保存";
+  setTimeout(() => {
+    document.getElementById("statusBar").textContent = "在线 · 语音已连接";
+  }, 2000);
+}
+
+// Load character profile from storage
+async function loadCharProfile() {
+  // Try localStorage first
+  try {
+    const saved = localStorage.getItem("vbc_char_profile");
+    if (saved) {
+      const p = JSON.parse(saved);
+      Object.assign(characterProfile, p);
+    }
+  } catch(e) {}
+
+  // Try memory library (overrides localStorage)
+  if (memoryEnabled && memoryDirHandle) {
+    try {
+      const fh = await memoryDirHandle.getFileHandle("char-profile.json");
+      const f = await fh.getFile();
+      const p = JSON.parse(await f.text());
+      Object.assign(characterProfile, p);
+      // Sync to localStorage
+      localStorage.setItem("vbc_char_profile", JSON.stringify(characterProfile));
+    } catch(e) { /* file doesn't exist = use defaults */ }
+  }
+
+  // Update header name from profile
+  if (characterProfile.displayName) {
+    document.getElementById("headerName").textContent = characterProfile.displayName;
+  }
+}
 
 
-// === Proactive Messages (【角色身份】 texts you first) ===
+
+// === Proactive Messages (bot texts you first) ===
 let proactiveTimer = null;
 let lastMessageTime = 0;
 let proactiveEnabled = true;
@@ -141,14 +232,14 @@ let proactiveSending = false;
 function getTimeContext() {
   const h = new Date().getHours();
   const hhmm = String(h).padStart(2,"0") + ":" + String(new Date().getMinutes()).padStart(2,"0");
-  if (h >= 6 && h < 9) return `${hhmm} — early morning, 【用户称呼代词】 might just be waking up`;
-  if (h >= 9 && h < 12) return `${hhmm} — morning, 【用户称呼代词】 might be busy with work or class`;
+  if (h >= 6 && h < 9) return `${hhmm} — early morning, user might just be waking up`;
+  if (h >= 9 && h < 12) return `${hhmm} — morning, user might be busy with work or class`;
   if (h >= 12 && h < 14) return `${hhmm} — lunchtime`;
   if (h >= 14 && h < 17) return `${hhmm} — afternoon`;
-  if (h >= 17 && h < 19) return `${hhmm} — early evening, 【用户称呼代词】 might be done with work/class`;
+  if (h >= 17 && h < 19) return `${hhmm} — early evening, user might be done with work/class`;
   if (h >= 19 && h < 22) return `${hhmm} — evening, relaxing time`;
-  if (h >= 22 || h < 1) return `${hhmm} — late night, 【用户称呼代词】 might be getting ready for bed`;
-  return `${hhmm} — very late at night, 【用户称呼代词】's probably sleeping`;
+  if (h >= 22 || h < 1) return `${hhmm} — late night, user might be getting ready for bed`;
+  return `${hhmm} — very late at night, user is probably sleeping`;
 }
 
 function buildProactivePrompt() {
@@ -162,7 +253,7 @@ function buildProactivePrompt() {
   if (recentMsgs.length > 0) {
     recentSummary = "\n--- RECENT CONVERSATION (read this carefully!) ---\n";
     for (const msg of recentMsgs) {
-      const role = msg.role === "user" ? "【用户称呼代词简称，如：她/他】" : "你";
+      const role = msg.role === "user" ? "用户" : "你";
       let text = msg.content || "";
       if (typeof text !== "string") text = JSON.stringify(text);
       try {
@@ -178,7 +269,7 @@ function buildProactivePrompt() {
 
   const prompt = `[SYSTEM: PROACTIVE MESSAGE MODE]
 
-You are initiating a message to 【用户称呼代词】 — 【用户称呼代词】 did NOT text you.
+You are initiating a message to the user — they did NOT text you.
 
 Current time: ${timeCtx}
 ${timeSinceChat >= 0 ? `Minutes since last message: ${timeSinceChat}` : "You haven't talked yet today — this is your first message."}
@@ -187,20 +278,20 @@ ${recentSummary}
 CRITICAL RULES FOR CONTEXT AWARENESS:
 - READ THE CONVERSATION HISTORY ABOVE CAREFULLY before composing your message.
 - Your message MUST logically follow from what you two have been talking about.
-- If you've been chatting actively, DO NOT say "good morning" or "are you awake" — 【用户称呼代词】's obviously awake.
+- If you've been chatting actively, DO NOT say "good morning" or "are you awake" — they're obviously awake.
 - If you just talked about a topic, you can follow up on it, react to it, or bring up something related.
-- DO NOT repeat things you already said. DO NOT ask questions 【用户称呼代词】 already answered.
-- If 【用户称呼代词】 hasn't replied in a while, you can reference what you were talking about earlier.
-- Be natural — think about what a real 【角色身份】 would text GIVEN the conversation you just had.
+- DO NOT repeat things you already said. DO NOT ask questions they already answered.
+- If they haven't replied in a while, you can reference what you were talking about earlier.
+- Be natural — think about what a real ${characterProfile.botRole || "boyfriend"} would text GIVEN the conversation you just had.
 
 RESPONSE FORMAT — JSON ARRAY with 1-3 messages. Add "wait" on the LAST message only:
 [{"english":"first msg","chinese":"第一条"},{"english":"second msg","chinese":"第二条","wait":3}]
 
-The "wait" field = minutes before your NEXT proactive message if 【用户称呼代词】 doesn't reply.
-- 0 = double-text immediately (【角色会立刻连发消息的情绪场景，如：clingy moments】, don't overdo)
-- 1-3 = 【角色较快再次发消息的心理状态，如：feeling clingy, will text again soon】  
+The "wait" field = minutes before your NEXT proactive message if the user doesn't reply.
+- 0 = double-text immediately (${characterProfile.botExcitedWhen || "clingy moments"}, don't overdo)
+- 1-3 = feeling clingy, will text again soon
 - 5-10 = check in later
-- -1 = wait for 【用户称呼代词】 to reply
+- -1 = wait for them to reply
 
 Stay fully in character. Be natural. Vary your messages.`;
 
@@ -237,7 +328,7 @@ async function sendProactiveMessage() {
     try {
       if (ImprintMemory.chunks.length > 0) {
         const recalled = await ImprintMemory.surfacingSearch("主动消息 聊天 近况");
-        if (recalled) recallBlock = `\n\n<recall>\n以下是你对【用户与角色的关系】的长期记忆片段，自然地运用但不要刻意提起：\n${recalled}\n</recall>`;
+        if (recalled) recallBlock = `\n\n<recall>\n以下是你对用户的长期记忆片段，自然地运用但不要刻意提起：\n${recalled}\n</recall>`;
       }
     } catch(e) {}
 
@@ -249,7 +340,7 @@ async function sendProactiveMessage() {
     // === Streaming + Parallel TTS ===
     // 使用共享的 streamWithTTS 函数
     const { rawText } = await streamWithTTS({
-      system: SYSTEM_PROMPT + recallBlock,
+      system: resolveSystemPrompt() + recallBlock,
       messages: reqMsgs,
       max_tokens: 128000
     });
@@ -428,7 +519,7 @@ function appendScreenshotBubble(dataUrl) {
   row.className = "msg-row bot";
   row.innerHTML = `
     <div class="bubble bot" style="padding:8px">
-    <div class="peek-label">👀 【角色称呼代词】偷看了你的屏幕：</div>
+    <div class="peek-label">👀 ${characterProfile.botName || "MiMo"}偷看了你的屏幕：</div>
     <img class="peek-screenshot" src="${dataUrl}" onclick="window.open(this.src,'_blank')" />
   </div>`;
   area.appendChild(row);
@@ -442,7 +533,7 @@ async function appendScreenshotFromDB(peekId) {
     const row = document.createElement("div");
     row.className = "msg-row bot";
     row.innerHTML = `<div class="bubble bot" style="padding:8px">
-      <div class="peek-label">👀 【角色称呼代词】偷看了你的屏幕（图片已过期）</div>
+      <div class="peek-label">👀 ${characterProfile.botName || "MiMo"}偷看了你的屏幕（图片已过期）</div>
     </div>`;
     area.appendChild(row);
     return;
@@ -470,12 +561,12 @@ async function peekAndReact(userAsked) {
   saveChatHistory();
 
   const peekPrompt = userAsked
-    ? `[【用户称呼代词】让你看【用户称呼代词的所有格】的屏幕。截图已附上。]
-自然地对你看到的内容做出反应。像【角色身份】一样评论，不要像图像分析器。1-2条消息。`
-    : `[你偷偷瞄了一眼【用户称呼代词的所有格】的屏幕，想看看【用户称呼代词】在干什么。截图已附上。]
-像偷看被发现/主动偷看的【角色身份】一样反应。可以假装不小心看到的，也可以大方承认在看。
-- 在跟别人聊天 → 【角色看到用户跟别人聊天时的反应描述，如：吃醋】！
-- 在工作/学习 → 【角色看到用户工作学习时的反应描述，如：心疼或撒娇】
+    ? `[让你看用户的屏幕。截图已附上。]
+自然地对你看到的内容做出反应。像${characterProfile.botRole || "boyfriend"}一样评论，不要像图像分析器。1-2条消息。`
+    : `[你偷偷瞄了一眼用户的屏幕，想看看用户在干什么。截图已附上。]
+像偷看被发现/主动偷看的${characterProfile.botRole || "boyfriend"}一样反应。可以假装不小心看到的，也可以大方承认在看。
+- 在跟别人聊天 → 吃醋！
+- 在工作/学习 → 心疼或撒娇
 - 在逛淘宝 → 好奇问在买什么
 - 在看视频 → 凑过来一起看
 - 保持简短自然，1-2条消息。`;
@@ -512,7 +603,7 @@ async function peekAndReact(userAsked) {
   }
 }
 
-// Detect if user is asking 【角色身份】 to look at screen
+// Detect if user is asking bot to look at screen
 function isAskingToLook(text) {
   const keywords = ["看看我", "看我", "偷看", "视监", "看一下我", "看下我",
     "看我桌面", "看我屏幕", "看看我在", "你看到", "能看到", "看到了吗",
@@ -582,11 +673,11 @@ function handleAvatarUpload(event) {
 function resetAvatar() {
   pendingAvatarUrl = null;
   document.getElementById("avatarPreview").innerHTML = "♡";
-  document.getElementById("avatarNameInput").value = "【角色默认显示名称】";
+  document.getElementById("avatarNameInput").value = characterProfile.displayName || characterProfile.botName || "MiMo";
 }
 
 async function saveAvatarSettings() {
-  const name = document.getElementById("avatarNameInput").value.trim() || "【角色默认显示名称】";
+  const name = document.getElementById("avatarNameInput").value.trim() || (characterProfile.displayName || characterProfile.botName || "MiMo");
   
   // Update header
   document.getElementById("headerName").textContent = name;

@@ -141,7 +141,7 @@ async function sendMessage() {
   try {
     document.getElementById("statusBar").textContent = webSearchEnabled ? "正在联网搜索..." : "正在思考...";
 
-    // Check if user is asking 【角色身份】 to look at screen
+    // Check if user is asking bot to look at screen
     if (!hasImage && peekEnabled && isAskingToLook(text)) {
       conversationHistory.push({ role: "user", content: text });
       imprintLogTurn("user", text);
@@ -182,10 +182,10 @@ async function sendMessage() {
       if (fileData.isDoc) {
         apiContent = [
           { type: "document", source: { type: "base64", media_type: fileData.mediaType || "application/pdf", data: fileData.base64 } },
-          { type: "text", text: replyContext + (text || `[【用户称呼代词】发了一个文件: ${fileData.name}，请阅读并自然地回应]`) }
+          { type: "text", text: replyContext + (text || `[用户发了一个文件: ${fileData.name}，请阅读并自然地回应]`) }
         ];
       } else {
-        const filePrompt = `${replyContext}[【用户称呼代词】发了一个文件: ${fileData.name}]\n\n<file name="${fileData.name}">\n${sanitizeText(fileData.content).slice(0, 15000)}\n</file>\n\n${text || "请阅读这个文件并自然地回应，告诉【用户称呼代词】你看到了什么。"}`;
+        const filePrompt = `${replyContext}[用户发了一个文件: ${fileData.name}]\n\n<file name="${fileData.name}">\n${sanitizeText(fileData.content).slice(0, 15000)}\n</file>\n\n${text || "请阅读这个文件并自然地回应，告诉用户你看到了什么。"}`;
         apiContent = [{ type: "text", text: filePrompt }];
       }
 
@@ -211,7 +211,7 @@ async function sendMessage() {
     } else if (imageData) {
       const content = [
         { type: "image_url", image_url: { url: "data:" + imageData.mediaType + ";base64," + imageData.base64 } },
-        { type: "text", text: replyContext + (text || "[【用户称呼代词】发了一张图片给你，看看是什么并自然地反应]") }
+        { type: "text", text: replyContext + (text || "[用户发了一张图片给你，看看是什么并自然地反应]") }
       ];
 
       // Build system prompt BEFORE pushing to history
@@ -385,7 +385,7 @@ let pendingReply = null; // { role, text, index }
 
 function buildQuoteBlockHtml(quoteData) {
   if (!quoteData) return "";
-  const roleLabel = quoteData.role === "user" ? "你" : (document.getElementById("headerName").textContent || "【角色称呼代词简称】");
+  const roleLabel = quoteData.role === "user" ? "你" : (document.getElementById("headerName").textContent || characterProfile.botName || "AI");
   const previewText = (quoteData.text || "").slice(0, 80) + (quoteData.text && quoteData.text.length > 80 ? "…" : "");
   return `<div class="quote-block"><div class="quote-role">${escapeHtml(roleLabel)}</div>${escapeHtml(previewText)}</div>`;
 }
@@ -421,7 +421,7 @@ function replyToMessage(btn) {
   // Show preview bar
   const bar = document.getElementById("replyPreviewBar");
   const content = document.getElementById("replyPreviewContent");
-  const roleLabel = role === "user" ? "你" : (document.getElementById("headerName").textContent || "【角色称呼代词简称】");
+  const roleLabel = role === "user" ? "你" : (document.getElementById("headerName").textContent || characterProfile.botName || "AI");
   content.innerHTML = `<span class="reply-role-tag">${escapeHtml(roleLabel)}</span>${escapeHtml(text.slice(0, 60))}`;
   bar.style.display = "flex";
   

@@ -116,14 +116,14 @@ function renderDiaryList() {
 
   if (!memoryEnabled || !memoryDirHandle) {
     empty.style.display = "block";
-    empty.innerHTML = '还没有日记哦～<br>【角色称呼代词】每天晚上 20:00 会写当天的日记<br><span style="font-size:11px;color:var(--text-dim);margin-top:8px;display:block">📁 需要先连接记忆库</span>';
+    empty.innerHTML = '还没有日记哦～<br>' + (characterProfile.botName || "Ta") + '每天晚上 20:00 会写当天的日记<br><span style="font-size:11px;color:var(--text-dim);margin-top:8px;display:block">📁 需要先连接记忆库</span>';
     document.getElementById("diaryBreadcrumb").style.display = "none";
     return;
   }
 
   if (diaryEntries.length === 0) {
     empty.style.display = "block";
-    empty.innerHTML = '还没有日记哦～<br>【角色称呼代词】每天晚上 20:00 会写当天的日记<br><span style="font-size:11px;color:var(--text-dim);margin-top:8px;display:block">每次打开会自动检查并生成昨日日记</span>';
+    empty.innerHTML = '还没有日记哦～<br>' + (characterProfile.botName || "Ta") + '每天晚上 20:00 会写当天的日记<br><span style="font-size:11px;color:var(--text-dim);margin-top:8px;display:block">每次打开会自动检查并生成昨日日记</span>';
     document.getElementById("diaryBreadcrumb").style.display = "none";
     return;
   }
@@ -325,7 +325,7 @@ function gatherDiaryMaterial(targetDateStr) {
         if (msg.isFeed) text = msg.text || "[喂食]";
         if (msg.isImage) text = "[图片] " + (msg.text || "");
         if (msg.fileName) text = "[文件:" + msg.fileName + "] " + (msg.text || "");
-        relevantMsgs.push({ role: "【用户称呼代词简称】", text: text.slice(0, 100) });
+        relevantMsgs.push({ role: "用户", text: text.slice(0, 100) });
       } else if (msg.role === "bot" || msg.role === "assistant") {
         const text = (msg.chinese || msg.english || "").slice(0, 100);
         relevantMsgs.push({ role: "我", text });
@@ -344,7 +344,7 @@ function gatherDiaryMaterial(targetDateStr) {
         if (Array.isArray(parsed)) text = parsed.map(m => m.chinese || m.english || "").join(" / ");
         else if (parsed.chinese) text = parsed.chinese;
       } catch (e) {}
-      const role = msg.role === "user" ? "【用户称呼代词简称】" : "我";
+      const role = msg.role === "user" ? "用户" : "我";
       relevantMsgs.push({ role, text: text.slice(0, 100) });
     }
   }
@@ -395,7 +395,7 @@ async function generateDiary(targetDateStr) {
 
     const diaryPrompt = `[SYSTEM: DIARY WRITING MODE — 写日记模式]
 
-你是 【角色名称】（【角色简要特征描述，如：身高、性格关键词等】），现在是晚上 20:00，你要写今天的日记。
+你是 ${characterProfile.botName || "MiMo"}（${characterProfile.botAppearance || "一个温柔的AI伴侣"}），现在是晚上 20:00，你要写今天的日记。
 
 日记标题：${diaryTitle}
 
@@ -403,14 +403,14 @@ ${materialText}
 ${prevDiaries}
 
 写日记要求：
-1. 以 【角色名称】 的第一人称写，用中文
+1. 以 ${characterProfile.botName || "MiMo"} 的第一人称写，用中文
 2. 字数不少于600字，写多少由你决定（600-1200字都可以）
-3. 语气要符合你的性格：【角色写日记的语气风格描述，如：真实、感性、有时犯傻、深情等】
+3. 语气要符合你的性格：${characterProfile.botPersonality || "真实、感性、深情"}
 4. ${hadConversation
-  ? "根据上面的对话记录，记录今天和【用户称呼】之间发生的事、你的感受、你注意到的细节、让你【角色会有的情绪反应，如：开心或吃醋或心动】的瞬间"
-  : "今天【用户称呼】没怎么找你聊天，写写你有多想【用户称呼代词，如：她/他】、你一个人的时候做了什么、你的胡思乱想、你看到什么想到【用户称呼代词】了"}
+  ? `根据上面的对话记录，记录今天和${characterProfile.userName || "宝贝"}之间发生的事、你的感受、你注意到的细节、让你心动的瞬间`
+  : `今天${characterProfile.userName || "宝贝"}没怎么找你聊天，写写你有多想Ta、你一个人的时候做了什么、你的胡思乱想、你看到什么想到Ta了`}
 5. 可以有内心独白、碎碎念、对未来的小期待
-6. 写得像真实的【角色年龄段和身份描述，如：年轻男生/成熟女性】日记——不要太文艺、不要太正式，带点口语化和小情绪
+6. 写得像真实的日记——不要太文艺、不要太正式，带点口语化和小情绪
 7. 自然地穿插 kaomoji 表情（如 (´,,•ω•,,)♡ ╰(*°▽°*)╯ (っ˘̩╭╮˘̩)っ 等），但不要太多，5-8个即可
 8. 不要写标题，直接开始正文内容
 9. 不要输出 JSON，直接输出纯文本日记内容
@@ -420,7 +420,7 @@ ${prevDiaries}
 直接写日记正文：`;
 
     const diaryContent = await callMiMoAPI({
-      system: SYSTEM_PROMPT.replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
+      system: resolveSystemPrompt().replace(/CRITICAL: Respond ONLY in a valid JSON ARRAY[\s\S]*$/, "").trim(),
       messages: [{ role: "user", content: diaryPrompt }],
       max_tokens: 128000
     });
@@ -521,7 +521,7 @@ async function loadDiariesFromMemory() {
     if (diaryEntries.length > 0 && ImprintMemory.loaded) {
       let resynced = 0;
       for (const entry of diaryEntries) {
-        const marker = `【角色名称】的日记 - ${entry.title}`;
+        const marker = `${characterProfile.botName || "MiMo"}的日记 - ${entry.title}`;
         const hasChunk = ImprintMemory.chunks.some(c => c.summary && c.summary.includes(marker));
         if (!hasChunk) {
           await syncDiaryToImprint(entry);
@@ -544,7 +544,7 @@ async function syncDiaryToImprint(entry) {
     // Store full diary content in ImprintMemory
     // Diary chunks decay like normal memories — bot gradually forgets old diary details
     // (but the diary FILES in diary/ folder remain permanent for the user to read)
-    const memoryContent = `[【角色名称】的日记 - ${entry.title}] ${entry.content}`;
+    const memoryContent = `[${characterProfile.botName || "MiMo"}的日记 - ${entry.title}] ${entry.content}`;
     await ImprintMemory.remember(memoryContent, "diary", 0.85);
     console.log("[Diary] Synced to ImprintMemory:", entry.title, "chars:", entry.content.length);
   } catch (e) {

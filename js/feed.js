@@ -65,7 +65,7 @@ async function feedBot(emoji, foodName, extraText) {
   row.innerHTML = `
     <div class="bubble user" style="text-align:center;font-size:14px">
       <span style="font-size:36px">${emoji}</span><br>
-      <span style="color:var(--text-secondary)">喂了【角色称呼代词】${escapeHtml(foodName)}</span>${extraHtml}
+      <span style="color:var(--text-secondary)">喂了Ta ${escapeHtml(foodName)}</span>${extraHtml}
     </div>
     <div class="msg-time">${formatMsgTime(ts)}</div>`;
   area.appendChild(row);
@@ -76,8 +76,8 @@ async function feedBot(emoji, foodName, extraText) {
 
   // Tell MiMo
   const feedMsg = extraText
-    ? `[【用户称呼代词，大写首字母如：She/He】 opened the feeding panel and picked ${foodName}${emoji} to feed you, while saying: "${extraText}"] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`
-    : `[【用户称呼代词，大写首字母】 opened the feeding panel and picked ${foodName}${emoji} to feed you] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`;
+    ? `[用户 opened the feeding panel and picked ${foodName}${emoji} to feed you, while saying: "${extraText}"] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`
+    : `[用户 opened the feeding panel and picked ${foodName}${emoji} to feed you] IMPORTANT: Reply with 2-4 separate JSON messages, NOT just one!`;
   conversationHistory.push({ role: "user", content: feedMsg });
   imprintLogTurn("user", `[喂食: ${foodName}]${extraText ? " " + extraText : ""}`);
 

@@ -258,7 +258,7 @@ async function handleFileUpload(event) {
 
     document.getElementById("filePreviewBar").style.display = "flex";
     document.getElementById("filePreviewName").textContent = file.name + " (" + (file.size > 1024 ? Math.round(file.size/1024) + "KB" : file.size + "B") + ")";
-    document.getElementById("chatInput").placeholder = "可以说说你想让【角色称呼代词】看什么...";
+    document.getElementById("chatInput").placeholder = "可以说说你想让Ta看什么...";
   } catch(e) {
     alert("读取文件失败: " + e.message);
   }
