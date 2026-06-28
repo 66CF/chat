@@ -104,11 +104,14 @@ async function sendMessage() {
   // Roleplay mode intercept
   if (rpActive && text && !hasImage && !hasFile) {
     input.value = "";
+    input.style.height = "auto";
+    if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
     await sendRoleplayMessage(text);
     return;
   }
   
   isBusy = true;
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
   Debug.info('chat', `sendMessage: "${text?.slice(0, 50) || (hasImage ? '[图片]' : '[文件]')}" (image=${hasImage}, file=${hasFile})`);
 
   const imageData = pendingImage ? { ...pendingImage } : null;
@@ -119,6 +122,8 @@ async function sendMessage() {
   clearReply();
 
   input.value = "";
+  input.style.height = "auto";
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
   const empty = document.getElementById("emptyState");
   if (empty) empty.remove();
   lastMessageTime = Date.now();
@@ -268,6 +273,7 @@ async function sendMessage() {
   }
 
   isBusy = false;
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
   input.focus();
 }
 

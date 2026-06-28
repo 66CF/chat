@@ -69,10 +69,12 @@ function stageCurrentMessage() {
   
   stagedMessages.push(staged);
   input.value = "";
+  input.style.height = "auto";
   if (hasImage) clearImagePreview();
   if (hasFile) clearFilePreview();
   clearReply();
   renderStagedBar();
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
 }
 
 async function sendAllStaged() {

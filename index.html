@@ -561,16 +561,7 @@
 </div>
 <button class="jump-back-btn" id="jumpBackBtn" onclick="jumpBackToLatest()">↓ 回到最新</button>
 </div>
-<div class="img-preview-bar" id="imgPreviewBar" style="display:none">
-  <img id="imgPreviewThumb" src="" />
-  <span class="preview-hint">可以输入文字一起发送，也可以直接点发送</span>
-  <button class="remove-img" onclick="clearImagePreview()">✕</button>
-</div>
-<div class="img-preview-bar" id="filePreviewBar" style="display:none">
-  <span style="font-size:20px">📄</span>
-  <span class="preview-hint" id="filePreviewName">文件名</span>
-  <button class="remove-img" onclick="clearFilePreview()">✕</button>
-</div>
+
 
 <!-- Reply preview -->
 <div class="reply-preview-bar" id="replyPreviewBar" style="display:none">
@@ -599,33 +590,103 @@
   </div>
 </div>
 <div class="input-area" id="inputArea">
-  <button class="input-mode-btn" id="batchModeBtn" onclick="toggleBatchMode()" title="连续发送模式" style="font-size:15px">📌</button>
-  <button class="input-mode-btn" id="modeBtn" onclick="toggleInputMode()" disabled>🎤</button>
-  <input class="chat-input" id="chatInput" placeholder="跟我说话..." disabled
-         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
-         onpaste="handlePaste(event)" />
-  <div class="hold-to-talk" id="holdToTalk" style="display:none"
-       onmousedown="startVoiceRecord(event)" onmouseup="stopVoiceRecord()"
-       onmouseleave="cancelVoiceCheck()"
-       ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()"
-       ontouchcancel="cancelVoiceCheck()">按住 说话</div>
-  <div id="voiceAutoPlayToggle" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-dim);cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);white-space:nowrap;user-select:none;z-index:2" onclick="toggleVoiceAutoPlay()">🔇 自动播放:关</div>
-  <button class="input-mode-btn" id="stickerPickerBtn" onclick="toggleStickerPicker()" title="表情包">😊</button>
-  <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>发送</button>
-  <div class="attach-wrapper">
-    <button class="input-mode-btn" id="attachBtn" onclick="toggleAttachMenu()" title="发图片/文件">＋</button>
-    <div class="attach-menu" id="attachMenu">
-      <button onclick="pickImage()">🖼️ 图片</button>
-      <button onclick="pickFile()">📎 文件</button>
+  <div class="prompt-input-box" id="promptInputBox">
+    <!-- Image preview inside box -->
+    <div class="prompt-preview-bar" id="imgPreviewBar" style="display:none">
+      <div class="prompt-preview-thumb-wrap">
+        <img id="imgPreviewThumb" src="" />
+        <button class="prompt-preview-remove" onclick="clearImagePreview()">✕</button>
+      </div>
+    </div>
+    <!-- File preview inside box -->
+    <div class="prompt-preview-bar" id="filePreviewBar" style="display:none">
+      <span class="prompt-preview-file-icon">📄</span>
+      <span class="prompt-preview-file-name" id="filePreviewName">文件名</span>
+      <button class="prompt-preview-remove" onclick="clearFilePreview()">✕</button>
+    </div>
+
+    <!-- Textarea -->
+    <textarea class="prompt-textarea" id="chatInput" placeholder="跟我说话..." disabled
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+              onpaste="handlePaste(event)" rows="1"></textarea>
+
+    <!-- Hold-to-talk overlay -->
+    <div class="hold-to-talk" id="holdToTalk" style="display:none"
+         onmousedown="startVoiceRecord(event)" onmouseup="stopVoiceRecord()"
+         onmouseleave="cancelVoiceCheck()"
+         ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()"
+         ontouchcancel="cancelVoiceCheck()">按住 说话</div>
+
+    <!-- Voice recording visualizer -->
+    <div class="voice-visualizer" id="voiceVisualizer" style="display:none">
+      <div class="voice-visualizer-dot"></div>
+      <span class="voice-visualizer-time" id="recTime">00:00</span>
+      <div class="voice-visualizer-bars" id="voiceBars"></div>
+    </div>
+
+    <!-- Bottom actions row -->
+    <div class="prompt-actions">
+      <div class="prompt-actions-left" id="promptActionsLeft">
+        <!-- Attach button -->
+        <div class="attach-wrapper">
+          <button class="prompt-action-btn" id="attachBtn" onclick="toggleAttachMenu()" title="上传图片">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <div class="attach-menu" id="attachMenu">
+            <button onclick="pickImage()">🖼️ 图片</button>
+            <button onclick="pickFile()">📎 文件</button>
+          </div>
+        </div>
+
+        <!-- Search toggle (web search) -->
+        <button class="prompt-toggle-btn" id="searchToggleBtn" onclick="handlePromptToggle('search')" title="联网搜索">
+          <svg class="prompt-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="prompt-toggle-label" id="searchToggleLabel"></span>
+        </button>
+
+        <div class="prompt-divider"></div>
+
+        <!-- Think toggle (model switch) -->
+        <button class="prompt-toggle-btn" id="thinkToggleBtn" onclick="handlePromptToggle('think')" title="切换模型">
+          <svg class="prompt-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>
+          <span class="prompt-toggle-label" id="thinkToggleLabel"></span>
+        </button>
+
+        <div class="prompt-divider"></div>
+
+        <!-- Canvas toggle (features sidebar) -->
+        <button class="prompt-toggle-btn" id="canvasToggleBtn" onclick="handlePromptToggle('canvas')" title="更多功能">
+          <svg class="prompt-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></svg>
+          <span class="prompt-toggle-label" id="canvasToggleLabel"></span>
+        </button>
+      </div>
+
+      <div class="prompt-actions-right">
+        <!-- Batch mode -->
+        <button class="prompt-action-btn" id="batchModeBtn" onclick="toggleBatchMode()" title="连续发送模式" style="font-size:14px">📌</button>
+
+        <!-- Sticker picker -->
+        <button class="prompt-action-btn" id="stickerPickerBtn" onclick="toggleStickerPicker()" title="表情包" style="font-size:14px">😊</button>
+
+        <!-- Main action: mic / send / stop -->
+        <button class="prompt-send-btn" id="sendBtn" onclick="handleSendBtnClick()" disabled>
+          <span id="sendBtnIcon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="recording-hint" id="recordingHint">
   <div class="rec-dot"></div>
-  <div class="rec-time" id="recTime">0:00</div>
+  <div class="rec-time" id="recTimeOverlay">0:00</div>
   <div style="font-size:13px;color:#aaa">松手发送，上滑取消</div>
 </div>
+
+<!-- Voice auto-play toggle (shown in voice mode) -->
+<div id="voiceAutoPlayToggle" class="voice-autoplay-toggle" style="display:none" onclick="toggleVoiceAutoPlay()">🔇 自动播放:关</div>
 
 <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImageFile(event)" />
 <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)" />

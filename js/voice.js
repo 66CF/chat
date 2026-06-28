@@ -23,24 +23,27 @@ async function initMicStream() {
 // === Input Mode Toggle ===
 function toggleInputMode() {
   isVoiceMode = !isVoiceMode;
-  const modeBtn = document.getElementById("modeBtn");
   const chatInput = document.getElementById("chatInput");
   const holdBtn = document.getElementById("holdToTalk");
-  const sendBtn = document.getElementById("sendBtn");
+  const actionsLeft = document.getElementById("promptActionsLeft");
+  const voiceViz = document.getElementById("voiceVisualizer");
+  const sendBtnIcon = document.getElementById("sendBtnIcon");
 
   if (isVoiceMode) {
-    modeBtn.textContent = "⌨️";
     chatInput.style.display = "none";
     holdBtn.style.display = "block";
-    sendBtn.style.display = "none";
+    if (actionsLeft) actionsLeft.classList.add("voice-hidden");
     document.getElementById("voiceAutoPlayToggle").style.display = "block";
+    // Update send button to keyboard icon
+    if (sendBtnIcon) sendBtnIcon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>';
   } else {
-    modeBtn.textContent = "🎤";
     chatInput.style.display = "block";
     holdBtn.style.display = "none";
-    sendBtn.style.display = "block";
-    chatInput.focus();
+    if (voiceViz) voiceViz.style.display = "none";
+    if (actionsLeft) actionsLeft.classList.remove("voice-hidden");
     document.getElementById("voiceAutoPlayToggle").style.display = "none";
+    chatInput.focus();
+    updateSendButtonIcon();
   }
 }
 
@@ -75,8 +78,14 @@ function startVoiceRecord(e) {
     // Show recording UI
     document.getElementById("holdToTalk").classList.add("recording");
     document.getElementById("holdToTalk").textContent = "松开 发送";
+    // Show voice visualizer
+    const voiceViz = document.getElementById("voiceVisualizer");
+    if (voiceViz) {
+      voiceViz.style.display = "flex";
+      generateVoiceBars();
+    }
     const hint = document.getElementById("recordingHint");
-    hint.classList.add("visible");
+    if (hint) hint.classList.add("visible");
     updateRecTime();
     recTimerInterval = setInterval(updateRecTime, 1000);
   } catch(e) {
@@ -91,7 +100,10 @@ async function stopVoiceRecord() {
 
   document.getElementById("holdToTalk").classList.remove("recording");
   document.getElementById("holdToTalk").textContent = "按住 说话";
-  document.getElementById("recordingHint").classList.remove("visible");
+  const voiceViz = document.getElementById("voiceVisualizer");
+  if (voiceViz) voiceViz.style.display = "none";
+  const hint = document.getElementById("recordingHint");
+  if (hint) hint.classList.remove("visible");
 
   if (cancelledBySwipe) {
     mediaRecorder.stop();
@@ -148,6 +160,7 @@ async function stopVoiceRecord() {
   // Send to MiMo if we got text
   if (text) {
     isBusy = true;
+    if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
     // Save voice message to chat history
     chatMessages.push({ role: "user", text, isVoice: true, voiceAudioId, duration, time: Date.now() });
     saveChatHistory();
@@ -177,6 +190,7 @@ async function stopVoiceRecord() {
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
     }
     isBusy = false;
+    if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
   } else {
     // No text recognized, just save the voice
     chatMessages.push({ role: "user", text: "[语音消息]", isVoice: true, voiceAudioId, duration, time: Date.now() });
@@ -195,8 +209,27 @@ function cancelVoiceCheck() {
 function updateRecTime() {
   if (!recStartTime) return;
   const s = Math.floor((Date.now() - recStartTime) / 1000);
-  document.getElementById("recTime").textContent =
-    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const timeStr = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const recTimeEl = document.getElementById("recTime");
+  if (recTimeEl) recTimeEl.textContent = timeStr;
+  const recTimeOverlay = document.getElementById("recTimeOverlay");
+  if (recTimeOverlay) recTimeOverlay.textContent = timeStr;
+}
+
+function generateVoiceBars() {
+  const container = document.getElementById("voiceBars");
+  if (!container) return;
+  container.innerHTML = "";
+  const barCount = 32;
+  for (let i = 0; i < barCount; i++) {
+    const bar = document.createElement("div");
+    bar.className = "voice-bar-item";
+    const h = 4 + Math.random() * 20;
+    bar.style.height = h + "px";
+    bar.style.animationDelay = (i * 0.05) + "s";
+    bar.style.animationDuration = (0.4 + Math.random() * 0.4) + "s";
+    container.appendChild(bar);
+  }
 }
 
 // === Transcription ===

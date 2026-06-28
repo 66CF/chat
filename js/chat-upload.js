@@ -58,6 +58,7 @@ function showImagePreview(dataUrl) {
   document.getElementById("imgPreviewBar").style.display = "flex";
   document.getElementById("chatInput").placeholder = "输入文字一起发送，或直接点发送...";
   document.getElementById("chatInput").focus();
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
 }
 
 function clearImagePreview() {
@@ -65,6 +66,7 @@ function clearImagePreview() {
   document.getElementById("imgPreviewBar").style.display = "none";
   document.getElementById("imgPreviewThumb").src = "";
   document.getElementById("chatInput").placeholder = "跟我说话...";
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
 }
 
 // === File Upload & Download ===
@@ -259,6 +261,7 @@ async function handleFileUpload(event) {
     document.getElementById("filePreviewBar").style.display = "flex";
     document.getElementById("filePreviewName").textContent = file.name + " (" + (file.size > 1024 ? Math.round(file.size/1024) + "KB" : file.size + "B") + ")";
     document.getElementById("chatInput").placeholder = "可以说说你想让Ta看什么...";
+    if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
   } catch(e) {
     alert("读取文件失败: " + e.message);
   }
@@ -268,6 +271,7 @@ function clearFilePreview() {
   pendingFile = null;
   document.getElementById("filePreviewBar").style.display = "none";
   document.getElementById("chatInput").placeholder = "跟我说话...";
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
 }
 
 function createFileDownload(filename, content) {

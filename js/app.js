@@ -25,8 +25,10 @@ async function startChat() {
   document.getElementById("setup").classList.add("hidden");
   document.getElementById("chatInput").disabled = false;
   document.getElementById("sendBtn").disabled = false;
-  document.getElementById("modeBtn").disabled = false;
   document.getElementById("statusBar").textContent = "在线 · 语音已连接";
+  // Sync toggle button states
+  syncToggleStates();
+  if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
 
   // NOTE: 不再预先请求麦克风权限，避免 Android 手机音量变成电话模式
   // 麦克风权限会在用户第一次使用语音功能时延迟获取
@@ -436,10 +438,21 @@ function toggleModel() {
   }
   const btn = document.getElementById("modelBtn");
   const isPro = chatModel === MIMO_MODEL_PRO;
-  btn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
-  btn.style.opacity = "1";
-  btn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  if (btn) {
+    btn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
+    btn.style.opacity = "1";
+    btn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  }
   document.getElementById("statusBar").textContent = isPro ? "🧠 已切换到 Pro 模型（更强）" : "⚡ 已切换到 Flash 模型（更快）";
+  // Update think toggle button
+  const thinkBtn = document.getElementById("thinkToggleBtn");
+  const thinkLabel = document.getElementById("thinkToggleLabel");
+  if (thinkBtn) {
+    thinkBtn.classList.toggle("active", true);
+    thinkBtn.classList.toggle("active-think", isPro);
+    thinkBtn.classList.toggle("active-search", false);
+    if (thinkLabel) thinkLabel.textContent = isPro ? "Pro" : "Flash";
+  }
   saveSettingsToMemory();
   localStorage.setItem("vbc_model", chatModel);
 }
@@ -449,8 +462,18 @@ let webSearchEnabled = false;
 function toggleWebSearch() {
   webSearchEnabled = !webSearchEnabled;
   const btn = document.getElementById("webSearchBtn");
-  btn.textContent = webSearchEnabled ? "🔍 联网:开" : "🔍 联网:关";
-  btn.style.opacity = webSearchEnabled ? "1" : "0.5";
+  if (btn) {
+    btn.textContent = webSearchEnabled ? "🔍 联网:开" : "🔍 联网:关";
+    btn.style.opacity = webSearchEnabled ? "1" : "0.5";
+  }
+  // Update search toggle button
+  const searchBtn = document.getElementById("searchToggleBtn");
+  const searchLabel = document.getElementById("searchToggleLabel");
+  if (searchBtn) {
+    searchBtn.classList.toggle("active", webSearchEnabled);
+    searchBtn.classList.toggle("active-search", webSearchEnabled);
+    if (searchLabel) searchLabel.textContent = webSearchEnabled ? "联网" : "";
+  }
   saveSettingsToMemory();
   localStorage.setItem("vbc_websearch", webSearchEnabled ? "1" : "0");
 }
@@ -809,6 +832,88 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// === Prompt Input Box Handlers ===
+function handlePromptToggle(type) {
+  if (type === "search") {
+    toggleWebSearch();
+  } else if (type === "think") {
+    toggleModel();
+  } else if (type === "canvas") {
+    const btn = document.getElementById("canvasToggleBtn");
+    const label = document.getElementById("canvasToggleLabel");
+    if (btn) {
+      const isActive = btn.classList.toggle("active");
+      btn.classList.toggle("active-canvas", isActive);
+      if (label) label.textContent = isActive ? "功能" : "";
+    }
+    toggleFeaturesSidebar();
+  }
+}
+
+function syncToggleStates() {
+  // Sync search toggle
+  const searchBtn = document.getElementById("searchToggleBtn");
+  const searchLabel = document.getElementById("searchToggleLabel");
+  if (searchBtn) {
+    searchBtn.classList.toggle("active", webSearchEnabled);
+    searchBtn.classList.toggle("active-search", webSearchEnabled);
+    if (searchLabel) searchLabel.textContent = webSearchEnabled ? "联网" : "";
+  }
+  // Sync think toggle
+  const thinkBtn = document.getElementById("thinkToggleBtn");
+  const thinkLabel = document.getElementById("thinkToggleLabel");
+  if (thinkBtn) {
+    thinkBtn.classList.add("active");
+    const isPro = chatModel === MIMO_MODEL_PRO;
+    thinkBtn.classList.toggle("active-think", isPro);
+    if (thinkLabel) thinkLabel.textContent = isPro ? "Pro" : "Flash";
+  }
+}
+
+function handleSendBtnClick() {
+  if (isVoiceMode) {
+    toggleInputMode();
+    return;
+  }
+  const hasContent = document.getElementById("chatInput").value.trim() !== "" || !!pendingImage || !!pendingFile;
+  if (hasContent) {
+    sendMessage();
+  } else {
+    toggleInputMode();
+  }
+}
+
+function updateSendButtonIcon() {
+  const btn = document.getElementById("sendBtn");
+  const icon = document.getElementById("sendBtnIcon");
+  if (!btn || !icon) return;
+  const hasContent = document.getElementById("chatInput").value.trim() !== "" || !!pendingImage || !!pendingFile;
+
+  if (isBusy) {
+    // Loading state - square/stop icon
+    btn.classList.add("is-loading");
+    btn.classList.remove("has-content", "is-recording");
+    btn.disabled = false;
+    icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+  } else if (isVoiceMode) {
+    // Voice mode - keyboard icon
+    btn.classList.remove("has-content", "is-recording", "is-loading");
+    btn.disabled = false;
+    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>';
+  } else if (hasContent) {
+    // Has content - arrow up
+    btn.classList.add("has-content");
+    btn.classList.remove("is-recording", "is-loading");
+    btn.disabled = false;
+    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l7-7 7 7"/><line x1="12" y1="19" x2="12" y2="5"/></svg>';
+  } else {
+    // Empty - mic icon
+    btn.classList.remove("has-content", "is-recording", "is-loading");
+    btn.disabled = false;
+    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+  }
+}
+
 // === Init ===
 AudioDB.init().catch(e => console.warn("AudioDB init failed:", e));
 loadKeys();
@@ -875,4 +980,53 @@ document.addEventListener("visibilitychange", () => {
   };
   updateStatus();
   googleInput.addEventListener("input", updateStatus);
+})();
+
+// === Textarea Auto-Resize ===
+(function() {
+  const textarea = document.getElementById("chatInput");
+  if (!textarea) return;
+  const maxHeight = 240;
+  function autoResize() {
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + "px";
+  }
+  textarea.addEventListener("input", autoResize);
+  // Also update send button icon on input
+  textarea.addEventListener("input", function() {
+    if (typeof updateSendButtonIcon === "function") updateSendButtonIcon();
+  });
+})();
+
+// === Drag & Drop for Prompt Input Box ===
+(function() {
+  const box = document.getElementById("promptInputBox");
+  if (!box) return;
+  let dragCounter = 0;
+  box.addEventListener("dragenter", function(e) {
+    e.preventDefault();
+    dragCounter++;
+    box.classList.add("drag-over");
+  });
+  box.addEventListener("dragleave", function(e) {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      box.classList.remove("drag-over");
+    }
+  });
+  box.addEventListener("dragover", function(e) {
+    e.preventDefault();
+  });
+  box.addEventListener("drop", function(e) {
+    e.preventDefault();
+    dragCounter = 0;
+    box.classList.remove("drag-over");
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(f => f.type.startsWith("image/"));
+    if (imageFile) {
+      processImageFile(imageFile);
+    }
+  });
 })();
