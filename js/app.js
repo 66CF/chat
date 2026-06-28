@@ -282,11 +282,7 @@ async function sendProactiveMessage() {
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
-    const empty = document.getElementById("emptyState");
-    if (empty) empty.remove();
-
-    // 使用统一的消息显示函数
-    await showMultipleMessages(messages);
+    // streamWithTTS 已经显示了消息，不需要再次显示
     lastMessageTime = Date.now();
 
     // Browser notification (show last message)
