@@ -2,8 +2,12 @@
 // Depends on: config.js (MIMO_API_URL, MIMO_API_BASE, MIMO_MODEL_PRO, MIMO_MODEL_FLASH, mimoApiKey)
 // Depends on: storage.js (safeStringify)
 
-async function callMiMoAPI(options) {
-  const { system, messages, model, tools } = options;
+/**
+ * Prepare API messages: filter empty, select model, adjust max_tokens for images.
+ * Shared between callMiMoAPI and callMiMoAPIStream to eliminate duplication.
+ */
+function prepareAPIMessages(options) {
+  const { system, messages, model } = options;
   let { max_tokens = 128000 } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
@@ -16,6 +20,12 @@ async function callMiMoAPI(options) {
   const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
   if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_FLASH;
   if (hasImage && max_tokens < 2000) max_tokens = 2000;
+  return { apiMessages, useModel, max_tokens };
+}
+
+async function callMiMoAPI(options) {
+  const { tools } = options;
+  const { apiMessages, useModel, max_tokens } = prepareAPIMessages(options);
   const body = {
     model: useModel,
     max_tokens,
@@ -57,19 +67,8 @@ function extractTextFromResponse(data) {
 
 // === Streaming API (SSE) — for call mode speed optimization ===
 async function callMiMoAPIStream(options) {
-  const { system, messages, model, tools, onChunk } = options;
-  let { max_tokens = 128000 } = options;
-  const apiMessages = [];
-  if (system) apiMessages.push({ role: "system", content: system });
-  for (const m of messages) {
-    if (m.content && (typeof m.content !== "string" || m.content.trim())) {
-      apiMessages.push(m);
-    }
-  }
-  let useModel = model || (typeof chatModel !== "undefined" ? chatModel : MIMO_MODEL_PRO);
-  const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
-  if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_FLASH;
-  if (hasImage && max_tokens < 2000) max_tokens = 2000;
+  const { tools, onChunk } = options;
+  const { apiMessages, useModel, max_tokens } = prepareAPIMessages(options);
   const body = {
     model: useModel,
     max_tokens,

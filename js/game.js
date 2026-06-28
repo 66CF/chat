@@ -210,21 +210,16 @@ async function doTruthDare(choice) {
       ? `[TRUTH OR DARE GAME - 【用户称呼代词，如：She/He】 chose TRUTH] Generate a fun, spicy but appropriate truth question for your 【用户与角色的关系】. Ask something personal, romantic, or playful that fits your relationship. Respond in your normal JSON array format.`
       : `[TRUTH OR DARE GAME - 【用户称呼代词】 chose DARE] Generate a fun, cute dare challenge for your 【用户与角色的关系】. It should be playful and doable — something romantic, silly, or sweet. Respond in your normal JSON array format.`;
 
-    conversationHistory.push({ role: "user", content: `[真心话大冒险 - 【用户称呼代词】选了${choiceLabel}]` });
-    imprintLogTurn("user", `[真心话大冒险] 【用户称呼代词】选了${choiceLabel}`);
-    const systemPrompt = await buildSystemWithRecall(choiceLabel);
+    const systemPrompt = await prepareBotContext(choiceLabel, `[真心话大冒险 - 【用户称呼代词】选了${choiceLabel}]`, `[真心话大冒险] 【用户称呼代词】选了${choiceLabel}`);
 
     const rawText = await callMiMoAPI({
       system: systemPrompt,
-      messages: [...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content: prompt }],
+      messages: [...getRecentMessages(), { role: "user", content: prompt }],
       max_tokens: 128000
     });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    setLoading(false);
-    await showMultipleMessages(messages);
+    await handleBotReply(rawText);
+
     lastMessageTime = Date.now();
   } catch(e) {
     console.error("Truth/dare error:", e);

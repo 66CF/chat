@@ -158,19 +158,15 @@ async function sendMessage() {
       conversationHistory.push({ role: "user", content: displayText || `[发了文件: ${fileData.name}]` });
       imprintLogTurn("user", `[发了文件: ${fileData.name}] ${text || ""}`);
 
-    const rawText = await callMiMoAPI({
-      system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-      max_tokens: (currentGame && currentGame.type === "story_relay") ? 128000 : 128000,
-      tools: getWebSearchTool()
-    });
-      const messages = parseMiMoResponse(rawText);
-      conversationHistory.push({ role: "assistant", content: rawText });
-      imprintLogTurn("assistant", rawText);
+      const rawText = await callMiMoAPI({
+        system: systemPrompt,
+        messages: getRecentMessages(),
+        max_tokens: 128000,
+        tools: getWebSearchTool()
+      });
 
-      document.getElementById("statusBar").textContent = "正在生成语音...";
-      setLoading(false);
-      await showMultipleMessages(messages);
+      await handleBotReply(rawText);
+
       lastMessageTime = Date.now();
       scheduleProactiveMessage(3);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
@@ -188,19 +184,15 @@ async function sendMessage() {
       imprintLogTurn("user", text || "[发了一张图片]");
 
       // Send with image
-      const rawText2 = await callMiMoAPI({
+      const rawText = await callMiMoAPI({
         system: systemPrompt,
-        messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
+        messages: [...getRecentMessages(19), { role: "user", content }],
         max_tokens: 128000,
         tools: getWebSearchTool()
       });
-      const messages = parseMiMoResponse(rawText2);
-      conversationHistory.push({ role: "assistant", content: rawText2 });
-      imprintLogTurn("assistant", rawText2);
 
-      document.getElementById("statusBar").textContent = "正在生成语音...";
-      setLoading(false);
-      await showMultipleMessages(messages);
+      await handleBotReply(rawText);
+
       lastMessageTime = Date.now();
       scheduleProactiveMessage(3);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
@@ -209,16 +201,13 @@ async function sendMessage() {
       // Build system prompt with memory recall BEFORE pushing to history
       // (so searchRawHistory won't match the current message against itself)
       const apiText = replyContext + text;
-      const systemPrompt = await buildSystemWithRecall(apiText);
-
-      conversationHistory.push({ role: "user", content: apiText });
-      imprintLogTurn("user", apiText);
+      const systemPrompt = await prepareBotContext(apiText, apiText, apiText);
 
       // === Streaming Pipeline: parse → TTS → display one by one ===
       // 使用共享的 streamWithTTS 函数
       const { rawText } = await streamWithTTS({
         system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        messages: getRecentMessages(),
         max_tokens: 128000,
         tools: getWebSearchTool(),
         onProgress: (completedMsgCount) => {
@@ -227,8 +216,8 @@ async function sendMessage() {
         }
       });
 
-      conversationHistory.push({ role: "assistant", content: rawText });
-      imprintLogTurn("assistant", rawText);
+      // Streaming handles display internally; just save reply
+      await handleBotReply(rawText, { skipDisplay: true });
 
       lastMessageTime = Date.now();
       scheduleProactiveMessage(3);

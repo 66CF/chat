@@ -167,27 +167,18 @@ async function stopVoiceRecord() {
     document.getElementById("statusBar").textContent = "正在思考...";
 
     try {
-      const systemPrompt = await buildSystemWithRecall(text);
-      conversationHistory.push({ role: "user", content: text });
-      imprintLogTurn("user", text);
-
+      const systemPrompt = await prepareBotContext(text, text);
       // === Streaming + Parallel TTS ===
       // 使用共享的 streamWithTTS 函数
       const { rawText } = await streamWithTTS({
         system: systemPrompt,
-        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        messages: getRecentMessages(),
         max_tokens: 128000
       });
 
-      conversationHistory.push({ role: "assistant", content: rawText });
-      imprintLogTurn("assistant", rawText);
+      // Streaming handles display internally; just save reply
+      await handleBotReply(rawText, { skipDisplay: true });
 
-      document.getElementById("statusBar").textContent = "正在生成语音...";
-      setLoading(false);
-      
-      // 获取最终消息并显示
-      const messages = parseMiMoResponse(rawText);
-      await showMultipleMessages(messages);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
 
     } catch(err) {
@@ -507,15 +498,13 @@ async function handleCallMessage(text) {
   appendMessage("user", text, true);
 
   try {
-    const systemPrompt = await buildSystemWithRecall(text);
-    conversationHistory.push({ role: "user", content: text });
-    imprintLogTurn("user", text);
+    const systemPrompt = await prepareBotContext(text, text);
 
     // === Streaming + Parallel TTS ===
     // 使用共享的 streamWithTTS 函数
     const { rawText } = await streamWithTTS({
       system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      messages: getRecentMessages(),
       max_tokens: 128000,
       onProgress: (completedMsgCount) => {
         document.getElementById("callStatus").textContent =
@@ -523,11 +512,8 @@ async function handleCallMessage(text) {
       }
     });
 
-    // 获取最终消息
-    const messages = parseMiMoResponse(rawText);
-
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
+    // Streaming handles display internally; just save reply
+    const messages = await handleBotReply(rawText, { skipDisplay: true });
 
     const subtitle = document.getElementById("callSubtitle");
     document.getElementById("callStatus").textContent = "正在说话...";
@@ -537,8 +523,7 @@ async function handleCallMessage(text) {
     document.getElementById("callStatus").textContent = "正在说话...";
     setCallAvatarState("speaking");
     
-    // 使用统一的消息显示函数
-    await showMultipleMessages(messages);
+    // 使用统一的消息显示函数（call 模式下不需要再 display，streaming 已处理）
     
     // 如果还在通话中，继续监听
     if (isInCall) {

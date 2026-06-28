@@ -149,16 +149,13 @@ async function sendAllStaged() {
       
     // Combine all texts for API
     const combinedText = combinedTexts.join("\n");
-    const systemPrompt = await buildSystemWithRecall(combinedText);
-      
-    conversationHistory.push({ role: "user", content: combinedText });
-    imprintLogTurn("user", combinedText);
+    const systemPrompt = await prepareBotContext(combinedText, combinedText);
       
     // === Streaming Pipeline: parse → TTS → display one by one ===
     // 使用共享的 streamWithTTS 函数
     const { rawText } = await streamWithTTS({
       system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      messages: getRecentMessages(),
       max_tokens: 128000,
       tools: getWebSearchTool(),
       onProgress: (completedMsgCount) => {
@@ -167,8 +164,8 @@ async function sendAllStaged() {
       }
     });
 
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
+    // Streaming handles display internally; just save reply
+    await handleBotReply(rawText, { skipDisplay: true });
       
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);

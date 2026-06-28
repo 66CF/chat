@@ -164,22 +164,16 @@ async function sendDressupOutfit() {
   document.getElementById("statusBar").textContent = "正在看衣服...";
 
   try {
-    const systemPrompt = await buildSystemWithRecall(extraText || "换装 衣服");
-    conversationHistory.push({ role: "user", content: `[换装:递了一件衣服]${extraText ? " " + extraText : ""}` });
-    imprintLogTurn("user", `[换装:递了一件衣服的图片]${extraText ? " " + extraText : ""}`);
+    const systemPrompt = await prepareBotContext(extraText || "换装 衣服", `[换装:递了一件衣服]${extraText ? " " + extraText : ""}`, `[换装:递了一件衣服的图片]${extraText ? " " + extraText : ""}`);
 
     const rawText = await callMiMoAPI({
       system: systemPrompt,
-      messages: [...conversationHistory.slice(-20, -1).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())), { role: "user", content }],
+      messages: [...getRecentMessages(19), { role: "user", content }],
       max_tokens: 128000
     });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    setLoading(false);
-    document.getElementById("statusBar").textContent = "正在生成语音...";
-    await showMultipleMessages(messages);
+    await handleBotReply(rawText);
+
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);
 
@@ -227,9 +221,7 @@ async function sendDefaultOutfit() {
 
   const defaultMsg = `[【用户称呼代词】打开更衣间，让你换回你的日常穿搭] 自然地反应，【角色换回默认穿搭时可能的反应描述，如：可以开心地换回来、或者假装不舍得刚才那件衣服】。IMPORTANT: Reply with 1-3 separate JSON messages!`;
 
-  const systemPrompt = await buildSystemWithRecall("换回默认衣服");
-  conversationHistory.push({ role: "user", content: "[换装:换回默认穿搭]" });
-  imprintLogTurn("user", "[让【角色称呼代词】换回默认穿搭]");
+  const systemPrompt = await prepareBotContext("换回默认衣服", "[换装:换回默认穿搭]", "[让【角色称呼代词】换回默认穿搭]");
 
   setLoading(true);
   document.getElementById("statusBar").textContent = "正在换衣服...";
@@ -237,15 +229,12 @@ async function sendDefaultOutfit() {
   try {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      messages: getRecentMessages(),
       max_tokens: 128000
     });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    setLoading(false);
-    await showMultipleMessages(messages);
+    await handleBotReply(rawText);
+
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);
 

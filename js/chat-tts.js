@@ -285,86 +285,10 @@ async function showMultipleMessages(messages) {
 
     appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
 
-    // If message has a file attachment, add download button and persist
-    if (msg.file && msg.file.name && msg.file.content) {
-      const fname = msg.file.name;
-      const isPdf = fname.toLowerCase().endsWith(".pdf");
-      let dlUrl, dlName;
-
-      if (isPdf) {
-        try {
-          dlUrl = await createPdfFile(fname, msg.file.content);
-          dlName = fname;
-        } catch(e) {
-          console.warn("PDF generation failed, falling back to txt:", e);
-          const dl = createFileDownload(fname.replace(/\.pdf$/i, ".txt"), msg.file.content);
-          dlUrl = dl.url; dlName = dl.filename;
-        }
-      } else {
-        const dl = createFileDownload(fname, msg.file.content);
-        dlUrl = dl.url; dlName = dl.filename;
-      }
-
-      const area = document.getElementById("chatArea");
-      const lastRow = area.lastElementChild;
-      const bubble = lastRow.querySelector(".bubble.bot");
-      if (bubble) {
-        bubble.insertAdjacentHTML("beforeend",
-          `<a class="file-download-btn" href="${dlUrl}" download="${escapeHtml(dlName)}">📥 下载 ${escapeHtml(dlName)}</a>`
-        );
-      }
-      const lastMsg = chatMessages[chatMessages.length - 1];
-      if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
-        lastMsg.fileName = msg.file.name;
-        lastMsg.fileContent = msg.file.content;
-        saveChatHistory();
-      }
-    }
-
-    // If message has a sticker, display it and persist
-    if (msg.sticker) {
-      const sticker = findSticker(msg.sticker);
-      if (sticker) {
-        const area = document.getElementById("chatArea");
-        const lastRow = area.lastElementChild;
-        const bubble = lastRow.querySelector(".bubble.bot");
-        if (bubble) {
-          bubble.insertAdjacentHTML("beforeend",
-            `<img class="sticker-img" src="${sticker.url}" alt="${escapeHtml(sticker.name)}" title="${escapeHtml(sticker.name)}" onclick="window.open(this.src,'_blank')" />`
-          );
-        }
-        // Save sticker info in chatMessages for persistence
-        const lastMsg = chatMessages[chatMessages.length - 1];
-        if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
-          lastMsg.stickerName = sticker.name;
-          // Convert to base64 for persistent storage
-          try {
-            const resp = await fetch(sticker.url);
-            const blob = await resp.blob();
-            lastMsg.stickerDataUrl = await new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = () => resolve(null);
-              reader.readAsDataURL(blob);
-            });
-          } catch(e) { console.warn("Bot sticker base64 error:", e); }
-          saveChatHistory();
-        }
-      }
-    }
+    // Handle file/sticker/music attachments (shared with streaming pipeline)
+    await handleMsgAttachments(msg);
 
     // Play audio and wait for it to finish before next message
-    // Handle bot music action (切歌)
-    if (msg.music) handleBotMusicAction(msg);
-
-    if (audioUrl) {
-      await new Promise(resolve => {
-        const audio = new Audio(audioUrl);
-        currentAudio = audio;
-        audio.onended = () => { currentAudio = null; resolve(); };
-        audio.onerror = () => { currentAudio = null; resolve(); };
-        audio.play().catch(resolve);
-      });
-    }
+    await playAudioAndWait(audioUrl);
   }
 }

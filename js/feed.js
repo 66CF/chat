@@ -85,18 +85,15 @@ async function feedBot(emoji, foodName, extraText) {
   document.getElementById("statusBar").textContent = "正在嚼...";
 
   try {
-    const systemPrompt = await buildSystemWithRecall(feedMsg);
+    const systemPrompt = await prepareBotContext(feedMsg, feedMsg);
     const rawText = await callMiMoAPI({
       system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      messages: getRecentMessages(),
       max_tokens: 128000
     });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    setLoading(false);
-    await showMultipleMessages(messages);
+    await handleBotReply(rawText);
+
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);
   } catch(e) {

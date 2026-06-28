@@ -3,7 +3,62 @@
 // ============================================================
 // 提取自多个文件的重复代码，统一管理
 
-// === 1. Streaming + TTS 公共函数 ===
+
+// === 1. 对话历史公共函数 ===
+
+/**
+ * 获取最近的对话历史（过滤空消息）
+ * 替代到处重复的 conversationHistory.slice(-20).filter(m => m.content && ...)
+ */
+function getRecentMessages(count = 20) {
+  return conversationHistory.slice(-count).filter(
+    m => m.content && (typeof m.content !== "string" || m.content.trim())
+  );
+}
+
+/**
+ * 公共 pre-API 步骤：构建系统提示 + 推送用户消息到历史
+ * 用于大多数"用户发送消息→机器人回复"的场景
+ * 
+ * @param {string} searchText - 用于记忆召回搜索的文本
+ * @param {string|Array} userContent - 推送到 conversationHistory 的内容
+ * @param {string} [logText] - 推送到 imprintLogTurn 的文本（默认用 userContent）
+ * @returns {Promise<string>} 系统提示词
+ */
+async function prepareBotContext(searchText, userContent, logText) {
+  const systemPrompt = await buildSystemWithRecall(searchText);
+  conversationHistory.push({ role: "user", content: userContent });
+  imprintLogTurn("user", logText || (typeof userContent === "string" ? userContent : ""));
+  return systemPrompt;
+}
+
+/**
+ * 公共 post-API 步骤：保存回复到历史 + 解析 + 显示
+ * 替代各处重复的 conversationHistory.push + imprintLogTurn + parseMiMoResponse + showMultipleMessages
+ * 
+ * @param {string} rawText - API 返回的原始文本
+ * @param {Object} [options]
+ * @param {boolean} [options.skipDisplay=false] - 跳过显示（streaming 模式已内部处理显示）
+ * @returns {Promise<Array>} 解析后的消息数组
+ */
+async function handleBotReply(rawText, options = {}) {
+  const { skipDisplay = false } = options;
+
+  conversationHistory.push({ role: "assistant", content: rawText });
+  imprintLogTurn("assistant", rawText);
+
+  const messages = parseMiMoResponse(rawText);
+
+  if (!skipDisplay) {
+    setLoading(false);
+    await showMultipleMessages(messages);
+  }
+
+  return messages;
+}
+
+
+// === 2. Streaming + TTS 公共函数 ===
 /**
  * 流式 API 调用 + 并行 TTS 生成
  * 提取自 voice.js、app.js、chat.js、chat-batch.js 的重复代码
@@ -87,7 +142,7 @@ async function streamWithTTS(options) {
 }
 
 
-// === 2. Blob URL 管理器 ===
+// === 3. Blob URL 管理器 ===
 /**
  * 管理 Blob URL 的生命周期，防止内存泄漏
  */
@@ -191,7 +246,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 
-// === 3. 统一错误处理 ===
+// === 4. 统一错误处理 ===
 /**
  * 错误处理器 - 提供用户友好的错误信息和日志记录
  */
@@ -313,7 +368,7 @@ const ErrorHandler = {
 };
 
 
-// === 4. 输入验证和清理 ===
+// === 5. 输入验证和清理 ===
 /**
  * 输入验证器
  */
@@ -375,94 +430,6 @@ const InputValidator = {
       };
     }
     return { valid: true };
-  }
-};
-
-
-// === 5. 状态管理 ===
-/**
- * 全局状态管理器
- */
-const AppState = {
-  _state: {
-    isBusy: false,
-    isInCall: false,
-    rpActive: false,
-    currentAudio: null,
-    proactiveEnabled: true,
-    webSearchEnabled: false,
-    peekEnabled: false,
-    memoryEnabled: false,
-    chatModel: 'mimo-v2.5-pro'
-  },
-
-  _listeners: new Map(),
-
-  /**
-   * 获取状态
-   */
-  get(key) {
-    return this._state[key];
-  },
-
-  /**
-   * 设置状态
-   */
-  set(key, value) {
-    const oldValue = this._state[key];
-    this._state[key] = value;
-    
-    // 触发监听器
-    if (oldValue !== value) {
-      this._notify(key, value, oldValue);
-    }
-  },
-
-  /**
-   * 监听状态变化
-   */
-  on(key, callback) {
-    if (!this._listeners.has(key)) {
-      this._listeners.set(key, new Set());
-    }
-    this._listeners.get(key).add(callback);
-    
-    // 返回取消监听函数
-    return () => {
-      this._listeners.get(key)?.delete(callback);
-    };
-  },
-
-  /**
-   * 通知监听器
-   */
-  _notify(key, newValue, oldValue) {
-    const listeners = this._listeners.get(key);
-    if (listeners) {
-      listeners.forEach(cb => {
-        try {
-          cb(newValue, oldValue);
-        } catch (e) {
-          console.error('State listener error:', e);
-        }
-      });
-    }
-  },
-
-  /**
-   * 批量更新状态
-   */
-  update(updates) {
-    for (const [key, value] of Object.entries(updates)) {
-      this.set(key, value);
-    }
-  },
-
-  /**
-   * 获取所有状态（只读副本）
-   */
-  getAll() {
-    return { ...this._state };
   }
 };
 

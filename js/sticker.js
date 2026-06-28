@@ -157,10 +157,7 @@ async function sendUserSticker(sticker) {
   const stickerMsg = `[【用户称呼代词】发了一个表情包：${sticker.name}]`;
 
   // Build system prompt BEFORE pushing to history
-  const systemPrompt = await buildSystemWithRecall(stickerMsg);
-
-  conversationHistory.push({ role: "user", content: stickerMsg });
-  imprintLogTurn("user", stickerMsg);
+  const systemPrompt = await prepareBotContext(stickerMsg, stickerMsg);
 
   // Get MiMo's response
   setLoading(true);
@@ -169,16 +166,12 @@ async function sendUserSticker(sticker) {
   try {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
-      messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      messages: getRecentMessages(),
       max_tokens: 128000
     });
-    const messages = parseMiMoResponse(rawText);
-    conversationHistory.push({ role: "assistant", content: rawText });
-    imprintLogTurn("assistant", rawText);
 
-    setLoading(false);
-    document.getElementById("statusBar").textContent = "正在生成语音...";
-    await showMultipleMessages(messages);
+    await handleBotReply(rawText);
+
     lastMessageTime = Date.now();
     scheduleProactiveMessage(3);
   } catch(e) {

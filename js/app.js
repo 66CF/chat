@@ -243,7 +243,7 @@ async function sendProactiveMessage() {
     } catch(e) {}
 
     const reqMsgs = [
-      ...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      ...getRecentMessages(20),
       { role: "user", content: prompt }
     ];
 
@@ -255,7 +255,7 @@ async function sendProactiveMessage() {
       max_tokens: 128000
     });
 
-    // 解析消息并提取 wait 参数
+    // 解析消息并提取 wait 参数（需要自定义解析，不能用 handleBotReply）
     let messages = [], waitMinutes = -1;
     const clean = (rawText || "").replace(/```json|```/g, "").trim();
     try {
@@ -487,7 +487,7 @@ async function peekAndReact(userAsked) {
 
   try {
     const apiMsgs = [
-      ...conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+      ...getRecentMessages(19),
       {
         role: "user",
         content: [
@@ -505,14 +505,10 @@ async function peekAndReact(userAsked) {
       max_tokens: 128000
     });
 
-    // 获取最终消息
-    const messages = parseMiMoResponse(rawText);
-
+    // Save assistant reply to history (user peek not saved — image is one-time)
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
-    // 使用统一的消息显示函数
-    await showMultipleMessages(messages);
     lastMessageTime = Date.now();
     return true;
   } catch(err) {
