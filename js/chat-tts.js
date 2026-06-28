@@ -268,13 +268,9 @@ async function fetchTTSForMessage(english, index, options = {}) {
   return { audioUrl: null, savedAudioId: null };
 }
 
-async function showMultipleMessages(messages, ttsPrefetch) {
-  // ttsPrefetch: optional Map<index, Promise<{audioUrl, savedAudioId}>>
-  //   pre-fired TTS promises (from streaming mode). If provided, we reuse them.
-
-  // Fire all TTS requests in parallel (for any not already prefetched)
+async function showMultipleMessages(messages) {
+  // Fire all TTS requests in parallel
   const ttsPromises = messages.map((msg, i) => {
-    if (ttsPrefetch && ttsPrefetch.has(i)) return ttsPrefetch.get(i);
     return fetchTTSForMessage(msg.english, i);
   });
 

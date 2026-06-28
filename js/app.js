@@ -248,66 +248,36 @@ async function sendProactiveMessage() {
     ];
 
     // === Streaming + Parallel TTS ===
-    const ttsPromisesMap = new Map();
-    let detectedCount = 0;
-    let ttsStartedCount = 0;
-    let cachedParsedMsgs = [];
-    function ensureTTS(index, english) {
-      if (ttsPromisesMap.has(index)) return;
-      ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
-    }
-
-    const rawText = await callMiMoAPIStream({
+    // 使用共享的 streamWithTTS 函数
+    const { rawText } = await streamWithTTS({
       system: SYSTEM_PROMPT + recallBlock,
       messages: reqMsgs,
-      max_tokens: 128000,
-      onChunk: (accumulated) => {
-        cachedParsedMsgs = extractCompleteMessages(accumulated);
-        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
-
-        // Early TTS: fire as soon as english field is closed in stream
-        const readyEnglish = extractReadyEnglish(accumulated);
-        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
-          ensureTTS(i, readyEnglish[i]);
-        }
-        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
-      }
+      max_tokens: 128000
     });
 
-    // Parse: reuse cached messages from streaming, extract "wait" from last element
+    // 解析消息并提取 wait 参数
     let messages = [], waitMinutes = -1;
-    if (cachedParsedMsgs.length > 0) {
-      messages = filterParsedMessages(cachedParsedMsgs);
+    const clean = (rawText || "").replace(/```json|```/g, "").trim();
+    try {
+      const parsed = JSON.parse(clean);
+      if (Array.isArray(parsed)) {
+        messages = parsed;
+      } else if (parsed.english) {
+        messages = [parsed];
+      }
       const last = messages[messages.length - 1];
       if (last && typeof last.wait === "number") waitMinutes = last.wait;
-    } else {
-      const clean = (rawText || "").replace(/```json|```/g, "").trim();
-      try {
-        const parsed = JSON.parse(clean);
-        if (Array.isArray(parsed)) {
-          messages = parsed;
-        } else if (parsed.english) {
-          messages = [parsed];
-        }
-        const last = messages[messages.length - 1];
-        if (last && typeof last.wait === "number") waitMinutes = last.wait;
-      } catch(e) {
-        const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-        const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-        const waitM = clean.match(/"wait"\s*:\s*(-?\d+)/);
-        if (engM && chnM) {
-          messages = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
-          waitMinutes = waitM ? parseInt(waitM[1]) : -1;
-        } else throw new Error("Parse error");
+    } catch(e) {
+      const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      const waitM = clean.match(/"wait"\s*:\s*(-?\d+)/);
+      if (engM && chnM) {
+        messages = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
+        waitMinutes = waitM ? parseInt(waitM[1]) : -1;
       }
     }
 
     if (messages.length === 0) throw new Error("Empty response");
-
-    // Ensure all TTS jobs are started
-    for (let i = 0; i < messages.length; i++) {
-      ensureTTS(i, messages[i].english);
-    }
 
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
@@ -315,8 +285,8 @@ async function sendProactiveMessage() {
     const empty = document.getElementById("emptyState");
     if (empty) empty.remove();
 
-    // Show all messages with parallel TTS (prefetched during streaming)
-    await showMultipleMessages(messages, ttsPromisesMap);
+    // 使用统一的消息显示函数
+    await showMultipleMessages(messages);
     lastMessageTime = Date.now();
 
     // Browser notification (show last message)
@@ -528,45 +498,21 @@ async function peekAndReact(userAsked) {
     ];
 
     // === Streaming + Parallel TTS ===
-    const ttsPromisesMap = new Map();
-    let detectedCount = 0;
-    let ttsStartedCount = 0;
-    let cachedParsedMsgs = [];
-    function ensureTTS(index, english) {
-      if (ttsPromisesMap.has(index)) return;
-      ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
-    }
-
-    const rawText = await callMiMoAPIStream({
+    // 使用共享的 streamWithTTS 函数
+    const { rawText } = await streamWithTTS({
       system: await buildSystemWithRecall("看屏幕"),
       messages: apiMsgs,
-      max_tokens: 128000,
-      onChunk: (accumulated) => {
-        cachedParsedMsgs = extractCompleteMessages(accumulated);
-        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
-
-        // Early TTS: fire as soon as english field is closed in stream
-        const readyEnglish = extractReadyEnglish(accumulated);
-        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
-          ensureTTS(i, readyEnglish[i]);
-        }
-        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
-      }
+      max_tokens: 128000
     });
-    // Reuse cached messages from streaming if available, skip re-parsing
-    const messages = cachedParsedMsgs.length > 0
-      ? filterParsedMessages(cachedParsedMsgs)
-      : parseMiMoResponse(rawText);
 
-    // Ensure all TTS jobs are started
-    for (let i = 0; i < messages.length; i++) {
-      ensureTTS(i, messages[i].english);
-    }
+    // 获取最终消息
+    const messages = parseMiMoResponse(rawText);
 
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
 
-    await showMultipleMessages(messages, ttsPromisesMap);
+    // 使用统一的消息显示函数
+    await showMultipleMessages(messages);
     lastMessageTime = Date.now();
     return true;
   } catch(err) {

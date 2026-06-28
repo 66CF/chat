@@ -183,8 +183,9 @@ async function handleFileUpload(event) {
   const ext = file.name.split(".").pop().toLowerCase();
   const maxSize = 10 * 1024 * 1024; // 10MB limit
 
-  if (file.size > maxSize) {
-    alert("文件太大了（最大10MB）");
+  const sizeValidation = InputValidator.validateFileSize(file.size);
+  if (!sizeValidation.valid) {
+    alert(sizeValidation.message);
     return;
   }
 
@@ -204,8 +205,9 @@ async function handleFileUpload(event) {
         try {
           const content = await extractDocxText(file);
           if (!content || content.trim().length === 0) throw new Error("文件内容为空");
-          if (content.length > 80000) {
-            alert("文件内容太长了（最大8万字符），建议截取关键部分");
+          const lengthValidation = InputValidator.validateMessageLength(content, 80000);
+          if (!lengthValidation.valid) {
+            alert(lengthValidation.message);
             return;
           }
           pendingFile = { name: file.name, type: ext, isDoc: false, isPdf: false, base64: null, content };
@@ -217,8 +219,9 @@ async function handleFileUpload(event) {
         // Other office formats → try extracting text from XML in zip
         try {
           const content = await extractOfficeXmlText(file);
-          if (content.length > 80000) {
-            alert("文件内容太长了（最大8万字符），建议截取关键部分");
+          const lengthValidation = InputValidator.validateMessageLength(content, 80000);
+          if (!lengthValidation.valid) {
+            alert(lengthValidation.message);
             return;
           }
           pendingFile = { name: file.name, type: ext, isDoc: false, isPdf: false, base64: null, content };
@@ -230,8 +233,9 @@ async function handleFileUpload(event) {
     } else if (TEXT_EXTENSIONS.has(ext) || file.type.startsWith("text/") || ext === "") {
       // Text file → read as text
       const content = await file.text();
-      if (content.length > 80000) {
-        alert("文件内容太长了（最大8万字符），建议截取关键部分");
+      const lengthValidation = InputValidator.validateMessageLength(content, 80000);
+      if (!lengthValidation.valid) {
+        alert(lengthValidation.message);
         return;
       }
       pendingFile = { name: file.name, type: ext, isDoc: false, isPdf: false, base64: null, content };

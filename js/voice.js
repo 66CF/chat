@@ -172,54 +172,27 @@ async function stopVoiceRecord() {
       imprintLogTurn("user", text);
 
       // === Streaming + Parallel TTS ===
-      const ttsPromisesMap = new Map();
-      let detectedCount = 0;
-      let ttsStartedCount = 0;
-      let cachedParsedMsgs = [];
-
-      function ensureTTS(index, english) {
-        if (ttsPromisesMap.has(index)) return;
-        ttsPromisesMap.set(index, fetchTTSForMessage(english, index));
-      }
-
-      const rawText = await callMiMoAPIStream({
+      // 使用共享的 streamWithTTS 函数
+      const { rawText } = await streamWithTTS({
         system: systemPrompt,
         messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-        max_tokens: 128000,
-        onChunk: (accumulated) => {
-          cachedParsedMsgs = extractCompleteMessages(accumulated);
-          detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
-
-          // Early TTS: fire as soon as english field is closed in stream
-          const readyEnglish = extractReadyEnglish(accumulated);
-          for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
-            ensureTTS(i, readyEnglish[i]);
-          }
-          ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
-        }
+        max_tokens: 128000
       });
-
-      // Reuse cached messages from streaming if available, skip re-parsing
-      const messages = cachedParsedMsgs.length > 0
-        ? filterParsedMessages(cachedParsedMsgs)
-        : parseMiMoResponse(rawText);
-
-      // Ensure all TTS jobs are started
-      for (let i = 0; i < messages.length; i++) {
-        ensureTTS(i, messages[i].english);
-      }
 
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
 
       document.getElementById("statusBar").textContent = "正在生成语音...";
       setLoading(false);
-      await showMultipleMessages(messages, ttsPromisesMap);
+      
+      // 获取最终消息并显示
+      const messages = parseMiMoResponse(rawText);
+      await showMultipleMessages(messages);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
 
     } catch(err) {
+      ErrorHandler.handle(err, 'voiceMessage', { showToast: true });
       setLoading(false);
-      showError(err.message);
       document.getElementById("statusBar").textContent = "在线 · 语音已连接";
     }
     isBusy = false;
@@ -538,50 +511,20 @@ async function handleCallMessage(text) {
     conversationHistory.push({ role: "user", content: text });
     imprintLogTurn("user", text);
 
-    // === Parallel TTS: fire TTS as soon as a message is detected in stream ===
-    const ttsResults = new Map();   // index → { audioUrl, savedAudioId }
-    const ttsPromises = new Map();  // index → Promise
-    let detectedCount = 0;
-    let ttsStartedCount = 0;
-    let cachedParsedMsgs = [];
-
-    function ensureTTS(index, english) {
-      if (ttsPromises.has(index)) return;
-      ttsPromises.set(index, (async () => {
-        const result = await fetchTTSForMessage(english, index);
-        if (result.audioUrl) ttsResults.set(index, result);
-      })());
-    }
-
-    // Streaming LLM call — onChunk fires TTS as soon as english field is ready
-    const rawText = await callMiMoAPIStream({
+    // === Streaming + Parallel TTS ===
+    // 使用共享的 streamWithTTS 函数
+    const { rawText } = await streamWithTTS({
       system: systemPrompt,
       messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
       max_tokens: 128000,
-      onChunk: (accumulated) => {
-        cachedParsedMsgs = extractCompleteMessages(accumulated);
-        detectedCount = Math.max(detectedCount, cachedParsedMsgs.length);
-
-        // Early TTS: fire as soon as english field is closed in stream
-        const readyEnglish = extractReadyEnglish(accumulated);
-        for (let i = ttsStartedCount; i < readyEnglish.length; i++) {
-          document.getElementById("callStatus").textContent =
-            `正在思考... (${i + 1}条已缓存)`;
-          ensureTTS(i, readyEnglish[i]);
-        }
-        ttsStartedCount = Math.max(ttsStartedCount, readyEnglish.length);
+      onProgress: (completedMsgCount) => {
+        document.getElementById("callStatus").textContent =
+          `正在思考... (${completedMsgCount}条已缓存)`;
       }
     });
 
-    // Reuse cached messages from streaming if available, skip re-parsing
-    const messages = cachedParsedMsgs.length > 0
-      ? filterParsedMessages(cachedParsedMsgs)
-      : parseMiMoResponse(rawText);
-
-    // Ensure all TTS jobs are started (catch any missed in stream)
-    for (let i = 0; i < messages.length; i++) {
-      ensureTTS(i, messages[i].english);
-    }
+    // 获取最终消息
+    const messages = parseMiMoResponse(rawText);
 
     conversationHistory.push({ role: "assistant", content: rawText });
     imprintLogTurn("assistant", rawText);
@@ -590,29 +533,16 @@ async function handleCallMessage(text) {
     document.getElementById("callStatus").textContent = "正在说话...";
     setCallAvatarState("speaking");
 
-    // Play messages sequentially — TTS should already be done (or nearly done)
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
-      subtitle.textContent = cleanTags(msg.chinese);
-      subtitle.classList.add("visible");
-      document.getElementById("callTranscript").innerHTML =
-        `<span class="him">${escapeHtml(cleanTags(msg.chinese))}</span>`;
-
-      // Wait for this message's TTS to finish
-      if (ttsPromises.has(i)) await ttsPromises.get(i);
-      const result = ttsResults.get(i);
-
-      appendBotMessage(msg.english, msg.chinese, result?.audioUrl || null, true, result?.savedAudioId || null);
-
-      if (result?.audioUrl && isInCall) {
-        await new Promise(resolve => {
-          const audio = new Audio(result.audioUrl);
-          currentAudio = audio;
-          audio.onended = () => { currentAudio = null; resolve(); };
-          audio.onerror = () => { currentAudio = null; resolve(); };
-          audio.play().catch(resolve);
-        });
-      }
+    // Play messages sequentially — 使用 showMultipleMessages 统一处理
+    document.getElementById("callStatus").textContent = "正在说话...";
+    setCallAvatarState("speaking");
+    
+    // 使用统一的消息显示函数
+    await showMultipleMessages(messages);
+    
+    // 如果还在通话中，继续监听
+    if (isInCall) {
+      subtitle.classList.remove("visible");
     }
 
     subtitle.classList.remove("visible");

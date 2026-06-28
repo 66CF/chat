@@ -215,62 +215,17 @@ async function sendMessage() {
       imprintLogTurn("user", apiText);
 
       // === Streaming Pipeline: parse → TTS → display one by one ===
-      // Each message is displayed & played as soon as its TTS completes,
-      // without waiting for the entire response to finish.
-      const proc = createStreamMessageProcessor();
-      let completedMsgCount = 0;
-      let earlyTTSDone = 0;
-      const ttsMap = {};  // index → Promise
-
-      function fireTTS(index, english) {
-        if (!ttsMap[index]) ttsMap[index] = fetchTTSForMessage(english, index);
-        return ttsMap[index];
-      }
-
-      // Run stream + display loop in parallel via Promise.all
-      const [, rawText] = await Promise.all([
-        proc.finished,
-        (async () => {
-          const rawText = await callMiMoAPIStream({
-            system: systemPrompt,
-            messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
-            max_tokens: (currentGame && currentGame.type === "story_relay") ? 128000 : 128000,
-            tools: getWebSearchTool(),
-            onChunk: (accumulated) => {
-              // Detect new complete messages → fire TTS + enqueue for display
-              const msgs = extractCompleteMessages(accumulated);
-              for (let i = completedMsgCount; i < msgs.length; i++) {
-                const m = msgs[i];
-                const p = fireTTS(i, m.english);
-                proc.enqueue(m, p);
-                completedMsgCount++;
-              }
-
-              // Also fire TTS early for english fields (before full JSON arrives)
-              const readyEnglish = extractReadyEnglish(accumulated);
-              for (let i = earlyTTSDone; i < readyEnglish.length; i++) {
-                fireTTS(i, readyEnglish[i]);
-                earlyTTSDone++;
-              }
-
-              document.getElementById("statusBar").textContent =
-                `正在思考... (${completedMsgCount}条已解析)`;
-            }
-          });
-
-          // Catch any messages not detected during streaming (fallback)
-          const finalMsgs = parseMiMoResponse(rawText);
-          for (let i = completedMsgCount; i < finalMsgs.length; i++) {
-            const m = finalMsgs[i];
-            const p = fireTTS(i, m.english);
-            proc.enqueue(m, p);
-            completedMsgCount++;
-          }
-
-          proc.done();  // signal display loop to finish
-          return rawText;
-        })()
-      ]);
+      // 使用共享的 streamWithTTS 函数
+      const { rawText } = await streamWithTTS({
+        system: systemPrompt,
+        messages: conversationHistory.slice(-20).filter(m => m.content && (typeof m.content !== "string" || m.content.trim())),
+        max_tokens: 128000,
+        tools: getWebSearchTool(),
+        onProgress: (completedMsgCount) => {
+          document.getElementById("statusBar").textContent =
+            `正在思考... (${completedMsgCount}条已解析)`;
+        }
+      });
 
       conversationHistory.push({ role: "assistant", content: rawText });
       imprintLogTurn("assistant", rawText);
@@ -281,10 +236,8 @@ async function sendMessage() {
     }
 
   } catch (err) {
-    console.error(err);
-    Debug.error('chat', `sendMessage 失败: ${err.message}`, err.stack);
+    ErrorHandler.handle(err, 'sendMessage', { showToast: true });
     setLoading(false);
-    showError(err.message);
     document.getElementById("statusBar").textContent = "在线 · 语音已连接";
   }
 
