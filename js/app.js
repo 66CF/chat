@@ -342,11 +342,16 @@ async function sendProactiveMessage() {
     // 解析消息并提取 wait 参数（需要自定义解析，不能用 handleBotReply）
     let messages = [], waitMinutes = -1;
     const clean = (rawText || "").replace(/```json|```/g, "").trim();
+    const tryParse = (str) => {
+      try { return JSON.parse(str); } catch(_) {}
+      try { return JSON.parse(str.replace(/,\s*([}\]])/g, '$1')); } catch(_) {}
+      return null;
+    };
     try {
-      const parsed = JSON.parse(clean);
+      const parsed = tryParse(clean);
       if (Array.isArray(parsed)) {
         messages = parsed;
-      } else if (parsed.english) {
+      } else if (parsed && parsed.english) {
         messages = [parsed];
       }
       const last = messages[messages.length - 1];

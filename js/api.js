@@ -161,7 +161,12 @@ function extractCompleteMessages(text) {
       depth--;
       if (depth === 0 && objStart >= 0) {
         try {
-          const obj = JSON.parse(s.slice(objStart, i + 1));
+          let objStr = s.slice(objStart, i + 1);
+          let obj;
+          try { obj = JSON.parse(objStr); } catch(_) {
+            // 修复 LLM 常见的尾逗号问题
+            obj = JSON.parse(objStr.replace(/,\s*([}\]])/g, '$1'));
+          }
           if (obj.english !== undefined && obj.chinese !== undefined) {
             messages.push(obj);
           }

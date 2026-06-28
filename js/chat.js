@@ -7,16 +7,37 @@ function parseMiMoResponse(rawText) {
   const clean = (rawText || "").replace(/```json|```/g, "").trim();
   if (!clean) throw new Error("API 返回为空");
   let msgs;
-  try {
-    const parsed = JSON.parse(clean);
+  // 先尝试直接解析，失败则修复尾逗号再试
+  const tryParse = (str) => {
+    try { return JSON.parse(str); } catch(_) {}
+    // 修复 LLM 常见的尾逗号问题 (e.g. "value",\n})
+    try { return JSON.parse(str.replace(/,\s*([}\]])/g, '$1')); } catch(_) {}
+    return null;
+  };
+  const parsed = tryParse(clean);
+  if (parsed) {
     if (Array.isArray(parsed)) msgs = parsed;
     else if (parsed.english && parsed.chinese) msgs = [parsed];
-    else throw new Error("Invalid format");
-  } catch(e) {
-    const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (engM && chnM) {
-      msgs = [{ english: engM[1].replace(/\\\"/g,'\"'), chinese: chnM[1].replace(/\\\"/g,'\"') }];
+    else msgs = null;
+  }
+  if (!msgs) {
+    // Regex fallback: 提取所有 english/chinese 对（而非仅第一个）
+    const engAll = [...clean.matchAll(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+    const chnAll = [...clean.matchAll(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+    const stickerAll = [...clean.matchAll(/"sticker"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+    const waitAll = [...clean.matchAll(/"wait"\s*:\s*(-?\d+)/g)];
+    if (engAll.length > 0 && chnAll.length > 0) {
+      const count = Math.max(engAll.length, chnAll.length);
+      msgs = [];
+      for (let i = 0; i < count; i++) {
+        const msg = {
+          english: engAll[i] ? engAll[i][1].replace(/\\(.)/g, '$1') : '',
+          chinese: chnAll[i] ? chnAll[i][1].replace(/\\(.)/g, '$1') : ''
+        };
+        if (stickerAll[i]) msg.sticker = stickerAll[i][1].replace(/\\(.)/g, '$1');
+        if (waitAll[i]) msg.wait = parseInt(waitAll[i][1]);
+        if (msg.english || msg.chinese) msgs.push(msg);
+      }
     } else {
       // 备用解析：处理非JSON格式的响应（如角色扮演风格）
       Debug.debug_log('parse', `备用解析: 非JSON格式`);
