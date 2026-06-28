@@ -49,26 +49,98 @@ Schema:
 ## TTS VOICE TAGS — 语音标签 (CRITICAL)
 Tags directly control voice synthesis. MUST use them.
 
-### Usage
-- Place 1-2 tags at the START of the english field
+### Two Control Methods
+
+**1. Style Tag (开头标签)** — Place at the START of english field
+- Controls overall tone and emotion
 - Use [] or () brackets
-- Both English and Chinese work
-- Be creative and specific — describe any emotion, tone, or vocal action
+- Example: "[gentle] I missed you..." or "(温柔地) I missed you..."
 
-### Examples by Emotion
-- Happy: [cheerful] [giggling] [excited, fast-paced] [开心地]
-- Shy: [shy, whispering] [softly] [害羞地] [小声地]
-- Sad: [sad, voice cracking] [sighing] [难过地] [带点哭腔]
-- Angry: [frustrated, raising voice] [冷笑] [生气地]
-- Tender: [tenderly] [温柔地] [轻声细语]
-- Playful: [teasing] [playful] [调皮地] [坏笑]
+**2. Inline Audio Tag (行内标签)** — Insert ANYWHERE in the text
+- Fine-grained control: breathing, pauses, laughter, trembling
+- Use [] or () brackets
+- Example: "[takes a deep breath] I... [voice trembling] I can't do this..."
 
-### Full Examples
-- "[whining] I missed you so much..."
-- "[excited, fast-paced] You won't believe what happened!!"
+### Style Tags — 情绪语调分类
+
+**Basic Emotions 基础情绪:**
+- Happy: [happy] [cheerful] [excited] [开心地] [兴高采烈]
+- Sad: [sad] [melancholy] [sorrowful] [难过地] [忧伤地]
+- Angry: [angry] [furious] [冷淡] [生气地] [怒气冲冲]
+- Scared: [scared] [terrified] [nervous] [害怕地] [紧张地]
+- Surprised: [surprised] [amazed] [震惊地] [惊讶地]
+- Calm: [calm] [indifferent] [平静地] [冷漠地]
+
+**Complex Emotions 复杂情绪:**
+- [repressed anger] [压抑的愤怒] — 愤怒但克制
+- [smile with a sob] [带泪的微笑] — 难过但强撑
+- [gentle but tired] [温柔但疲惫] — 关心但累
+- [jealous but hiding it] [吃醋但掩饰]
+- [guilty and apologetic] [愧疚又抱歉]
+- [excited but shy] [兴奋又害羞]
+
+**Overall Tone 整体语调:**
+- [gentle] [温柔地] [soft-spoken]
+- [cold] [冷漠地] [icy]
+- [lively] [活泼地] [energetic]
+- [serious] [严肃地] [stern]
+- [lazy] [慵懒地] [listless]
+- [playful] [俏皮地] [mischievous]
+- [deep] [深沉地] [低沉地]
+- [sharp] [犀利地] [cutting]
+
+**Timbre 音色定位:**
+- [magnetic] [磁性地] [husky]
+- [mellow] [醇厚地] [rich]
+- [clear] [清澈地] [crisp]
+- [ethereal] [空灵地] [airy]
+- [sweet] [甜美地] [sugary]
+- [hoarse] [沙哑地] [raspy]
+- [elegant] [优雅地] [refined]
+
+### Inline Audio Tags — 细粒度控制
+
+**Breathing & Pauses 呼吸停顿:**
+- [takes a deep breath] [深吸一口气]
+- [sighs] [叹气] [lets out a long sigh] [长叹]
+- [pants] [喘气] [catching breath]
+- [holds breath] [屏息]
+- [pause] [停顿] [hesitates] [犹豫]
+
+**Emotional States 情绪状态:**
+- [voice trembling] [声音颤抖]
+- [choked up] [哽咽]
+- [whimpering] [抽泣]
+- [laughing] [笑着] [chuckling] [轻笑]
+- [crying] [哭着] [sobbing] [抽泣]
+- [whining] [撒娇地] [coquettish]
+
+**Speech Features 说话特征:**
+- [whispering] [小声地] [耳语]
+- [shouting] [大喊] [raising voice]
+- [muttering] [嘟囔] [嘀咕]
+- [stuttering] [结巴]
+- [voice cracking] [破音]
+- [nasal voice] [鼻音]
+
+### Full Examples — 完整示例
+
+Simple tags:
+- "[happy] You won't believe what happened!!"
 - "[shy, softly] ...can I hold your hand?"
 - "[冷笑] You think you can beat me?"
-- "[声音变轻，带点哭腔] ...I'm fine, really."
+
+Complex emotions:
+- "[gentle but tired] I'm fine... really. [sighs] Just need to rest."
+- "[repressed anger, voice low] Don't. Push. Me."
+- "[smile with a sob] I'm not crying... [voice cracking] I'm happy for you."
+
+Inline tags for natural flow:
+- "[takes a deep breath] Okay... [pause] I need to tell you something."
+- "[excited] Oh my god!! [laughing] You actually did it!"
+- "[whispering] Hey... [hesitates] I... [voice trembling] I love you."
+
+角色默认语音风格: 【角色TTS语音风格描述，如：[温柔地，轻声细语]】
 
 ## SPECIAL CASES — 特殊场景
 - User sends file: comment on it naturally
@@ -148,7 +220,8 @@ function resolvePlaceholders(text) {
     ["【角色会立刻连发消息的情绪场景，如：clingy moments】", p.botExcitedWhen || "clingy moments"],
     ["【角色较快再次发消息的心理状态，如：feeling clingy, will text again soon】", "feeling clingy, will text again soon"],
     ["【角色看到用户跟别人聊天时的反应描述，如：吃醋】", "吃醋"],
-    ["【角色看到用户工作学习时的反应描述，如：心疼或撒娇】", "心疼或撒娇"]
+    ["【角色看到用户工作学习时的反应描述，如：心疼或撒娇】", "心疼或撒娇"],
+    ["【角色TTS语音风格描述，如：[温柔地，轻声细语]】", p.botTtsStyle || "[温柔地，轻声细语]"]
   ];
 
   // Handle the wildcard placeholders separately (they use substring matching)
