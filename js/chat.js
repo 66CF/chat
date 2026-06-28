@@ -59,6 +59,9 @@ function parseMiMoResponse(rawText) {
   // Filter: remove empty messages and emoji/kaomoji-only messages
   msgs = msgs.filter(m => {
     const eng = cleanTags(m.english || "").trim();
+    const chn = (m.chinese || "").trim();
+    // 如果英文为空，但中文不为空，保留消息
+    if (!eng && chn) return true;
     if (!eng) return false; // completely empty after cleaning tags
     // Check if english is ONLY emoji (no letters, numbers, or punctuation)
     const withoutEmoji = eng.replace(/[\p{Emoji}\p{Emoji_Presentation}\p{Extended_Pictographic}\s]/gu, "");
