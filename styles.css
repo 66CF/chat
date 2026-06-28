@@ -1223,6 +1223,8 @@
    === Debug Mode ===
    ============================================================ */
 
+
+/* === Debug Mode (简化版) === */
 .debug-mode .debug-panel { display: flex !important; }
 
 .debug-panel {
@@ -1231,8 +1233,8 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: 480px;
-  max-width: 90vw;
+  width: 360px;
+  max-width: 80vw;
   background: var(--bg-card, #1a1a2e);
   border-left: 2px solid var(--border, #333);
   z-index: 10000;
@@ -1253,31 +1255,18 @@
   flex-shrink: 0;
 }
 
-.debug-tabs {
+.debug-panel-title {
   display: flex;
-  gap: 2px;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 12px;
 }
 
-.debug-tab {
-  padding: 4px 10px;
-  border: 1px solid var(--border, #333);
-  background: transparent;
+.debug-panel-hint {
+  font-size: 10px;
   color: var(--text-dim, #888);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.debug-tab:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-.debug-tab.active {
-  background: var(--accent, #c4956a);
-  color: #fff;
-  border-color: var(--accent, #c4956a);
+  font-weight: normal;
 }
 
 .debug-panel-actions {
@@ -1336,6 +1325,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  padding: 4px 0;
 }
 
 .debug-panel-footer {
@@ -1353,45 +1343,7 @@
   opacity: 0.5;
 }
 
-/* --- Logs Tab --- */
-.debug-log-filter-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border, #333);
-  background: var(--bg-secondary, #16213e);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.debug-filter-input {
-  flex: 1;
-  padding: 3px 8px;
-  border: 1px solid var(--border, #333);
-  background: var(--bg, #0f0f23);
-  color: var(--text, #e0e0e0);
-  border-radius: 3px;
-  font-size: 11px;
-  font-family: inherit;
-  outline: none;
-}
-
-.debug-filter-input:focus {
-  border-color: var(--accent, #c4956a);
-}
-
-.debug-log-count {
-  font-size: 10px;
-  color: var(--text-dim, #888);
-  white-space: nowrap;
-}
-
-.debug-log-list {
-  padding: 4px 0;
-}
-
+/* --- Log Entries --- */
 .debug-log-entry {
   display: flex;
   flex-wrap: wrap;
@@ -1456,225 +1408,9 @@
   overflow-y: auto;
 }
 
-/* --- Requests Tab --- */
-.debug-req-list {
-  padding: 4px 0;
-}
-
-.debug-req-entry {
-  padding: 6px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.debug-req-entry:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.debug-req-entry.success { border-left: 3px solid #4a9; }
-.debug-req-entry.error { border-left: 3px solid #e74c3c; }
-.debug-req-entry.pending { border-left: 3px solid #e8a838; }
-
-.debug-req-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.debug-req-id {
-  color: var(--text-dim, #888);
-  font-weight: 700;
-  min-width: 28px;
-}
-
-.debug-req-model {
-  color: var(--accent, #c4956a);
-  font-size: 10px;
-  padding: 1px 6px;
-  background: rgba(196,149,106,0.1);
-  border-radius: 3px;
-}
-
-.debug-req-status {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 3px;
-}
-
-.debug-req-status.success { color: #4a9; background: rgba(68,170,153,0.15); }
-.debug-req-status.error { color: #e74c3c; background: rgba(231,76,60,0.15); }
-.debug-req-status.pending { color: #e8a838; background: rgba(232,168,56,0.15); }
-
-.debug-req-timing {
-  font-size: 10px;
-  color: var(--text-dim, #888);
-}
-
-.debug-req-chunks {
-  font-size: 10px;
-  color: var(--text-dim, #666);
-  margin-left: auto;
-}
-
-.debug-req-detail {
-  margin-top: 6px;
-  padding: 8px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 4px;
-  font-size: 10px;
-}
-
-.debug-req-section {
-  margin-bottom: 6px;
-  word-break: break-all;
-  white-space: pre-wrap;
-}
-
-.debug-req-section b {
-  color: var(--accent, #c4956a);
-}
-
-.debug-req-section.error {
-  color: #e74c3c;
-}
-
-/* --- State Tab --- */
-.debug-state-section {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.debug-state-section h3 {
-  margin: 0 0 8px 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text, #e0e0e0);
-}
-
-.debug-state-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.debug-state-table td {
-  padding: 3px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  font-size: 11px;
-  vertical-align: top;
-}
-
-.debug-state-label {
-  color: var(--text-dim, #888);
-  white-space: nowrap;
-  width: 120px;
-}
-
-.debug-state-value {
-  color: var(--text, #e0e0e0);
-  word-break: break-all;
-}
-
-.debug-state-long {
-  color: var(--text-dim, #888);
-  font-size: 10px;
-  word-break: break-all;
-}
-
-/* --- History Tab --- */
-.debug-history-section {
-  padding: 10px;
-}
-
-.debug-history-section h3 {
-  margin: 0 0 8px 0;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.debug-history-list {
-  max-height: none;
-}
-
-.debug-history-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 3px 6px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: background 0.1s;
-}
-
-.debug-history-entry:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.debug-history-idx {
-  color: var(--text-dim, #666);
-  font-size: 10px;
-  min-width: 28px;
-  flex-shrink: 0;
-}
-
-.debug-history-role {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 0 5px;
-  border-radius: 2px;
-  flex-shrink: 0;
-  min-width: 32px;
-  text-align: center;
-}
-
-.debug-history-role.user { color: #5a9; background: rgba(85,170,153,0.15); }
-.debug-history-role.assistant { color: #5a8ec9; background: rgba(90,142,201,0.15); }
-.debug-history-role.system { color: #888; background: rgba(136,136,136,0.1); }
-
-.debug-history-preview {
-  flex: 1;
-  min-width: 0;
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.debug-history-time {
-  color: var(--text-dim, #666);
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.debug-history-detail {
-  width: 100%;
-  padding: 6px 8px;
-  margin: 4px 0;
-  background: rgba(0,0,0,0.2);
-  border-radius: 4px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.debug-history-detail pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-size: 10px;
-  color: var(--text-dim, #aaa);
-}
-
-.debug-empty {
-  padding: 30px;
-  text-align: center;
-  color: var(--text-dim, #666);
-}
-
 /* --- Debug mode: shift main layout to make room for panel --- */
 .debug-mode {
-  padding-right: 480px;
+  padding-right: 360px;
 }
 
 /* --- Responsive: on small screens, debug panel overlays --- */
