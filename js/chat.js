@@ -16,10 +16,44 @@ function parseMiMoResponse(rawText) {
     const engM = clean.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
     const chnM = clean.match(/"chinese"\s*:\s*"((?:[^"\\]|\\.)*)"/);
     if (engM && chnM) {
-      msgs = [{ english: engM[1].replace(/\\"/g,'"'), chinese: chnM[1].replace(/\\"/g,'"') }];
+      msgs = [{ english: engM[1].replace(/\\\"/g,'\"'), chinese: chnM[1].replace(/\\\"/g,'\"') }];
     } else {
-      Debug.logParse('error', clean.slice(0, 300));
-      throw new Error("回复解析失败: " + clean.slice(0, 300));
+      // 备用解析：处理非JSON格式的响应（如角色扮演风格）
+      Debug.debug_log('parse', `备用解析: 非JSON格式`);
+      const lines = clean.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length === 0) {
+        Debug.logParse('error', clean.slice(0, 300));
+        throw new Error("回复解析失败: " + clean.slice(0, 300));
+      }
+      
+      // 尝试分离英文和中文行
+      const englishLines = [];
+      const chineseLines = [];
+      for (const line of lines) {
+        // 检查是否包含中文字符
+        if (/[\u4e00-\u9fff]/.test(line)) {
+          chineseLines.push(line);
+        } else {
+          englishLines.push(line);
+        }
+      }
+      
+      // 如果无法区分，将整个响应作为一条消息
+      if (englishLines.length === 0 && chineseLines.length === 0) {
+        msgs = [{ english: "", chinese: clean }];
+      } else if (englishLines.length === 0) {
+        // 只有中文行
+        msgs = [{ english: "", chinese: chineseLines.join('\n') }];
+      } else if (chineseLines.length === 0) {
+        // 只有英文行
+        msgs = [{ english: englishLines.join('\n'), chinese: "" }];
+      } else {
+        // 混合情况：将英文行和中文行分别组合
+        msgs = [{
+          english: englishLines.join('\n'),
+          chinese: chineseLines.join('\n')
+        }];
+      }
     }
   }
   // Filter: remove empty messages and emoji/kaomoji-only messages
