@@ -387,10 +387,11 @@
   /* Feed Game Sidebar */
   .feed-panel {
     position: fixed; top: 0; right: -280px; width: 270px; height: 100%;
-    background: var(--bg-secondary); border-left: 1px solid var(--border);
+    background: var(--bg-secondary);
     z-index: 200; transition: right 0.3s ease; display: flex; flex-direction: column;
+    visibility: hidden;
   }
-  .feed-panel.open { right: 0; }
+  .feed-panel.open { right: 0; visibility: visible; }
   .feed-panel-header {
     padding: 16px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
@@ -460,10 +461,11 @@
   /* Game System */
   .game-panel {
     position: fixed; top: 0; left: -300px; width: 290px; height: 100%;
-    background: var(--bg-secondary); border-right: 1px solid var(--border);
+    background: var(--bg-secondary);
     z-index: 200; transition: left 0.3s ease; display: flex; flex-direction: column;
+    visibility: hidden;
   }
-  .game-panel.open { left: 0; }
+  .game-panel.open { left: 0; visibility: visible; }
   .game-panel-header {
     padding: 16px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
@@ -499,10 +501,11 @@
   /* Diary System */
   .diary-panel {
     position: fixed; top: 0; right: -340px; width: 330px; height: 100%;
-    background: var(--bg-secondary); border-left: 1px solid var(--border);
+    background: var(--bg-secondary);
     z-index: 200; transition: right 0.3s ease; display: flex; flex-direction: column;
+    visibility: hidden;
   }
-  .diary-panel.open { right: 0; }
+  .diary-panel.open { right: 0; visibility: visible; }
   .diary-panel-header {
     padding: 16px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
@@ -608,10 +611,11 @@
   /* Dress-up Panel */
   .dressup-panel {
     position: fixed; top: 0; right: -300px; width: 290px; height: 100%;
-    background: var(--bg-secondary); border-left: 1px solid var(--border);
+    background: var(--bg-secondary);
     z-index: 200; transition: right 0.3s ease; display: flex; flex-direction: column;
+    visibility: hidden;
   }
-  .dressup-panel.open { right: 0; }
+  .dressup-panel.open { right: 0; visibility: visible; }
   .dressup-panel-header {
     padding: 16px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
@@ -1037,8 +1041,8 @@
     50% { opacity: 1; transform: scale(1.1); }
   }
   /* ===== Music Player ===== */
-  .music-panel { position:fixed;top:0;left:-360px;width:350px;height:100%;background:var(--bg-secondary);border-right:1px solid var(--border);z-index:200;transition:left .3s ease;display:flex;flex-direction:column; }
-  .music-panel.open { left:0; }
+  .music-panel { position:fixed;top:0;left:-360px;width:350px;height:100%;background:var(--bg-secondary);z-index:200;transition:left .3s ease;display:flex;flex-direction:column;visibility:hidden; }
+  .music-panel.open { left:0;visibility:visible; }
   .music-panel-header { padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0; }
   .music-panel-header h3 { margin:0;font-size:15px;color:var(--text-primary); }
   .music-panel-close { background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer; }
@@ -1109,10 +1113,11 @@
   .features-overlay.open { display:block; }
   .features-sidebar {
     position:fixed;top:0;right:-260px;width:240px;height:100%;
-    background:var(--bg-secondary);border-left:1px solid var(--border);
+    background:var(--bg-secondary);
     z-index:200;transition:right .25s ease;display:flex;flex-direction:column;
+    visibility:hidden;
   }
-  .features-sidebar.open { right:0; }
+  .features-sidebar.open { right:0;visibility:visible; }
   .features-sidebar-header {
     padding:16px;border-bottom:1px solid var(--border);
     display:flex;justify-content:space-between;align-items:center;
@@ -1231,7 +1236,6 @@
   width: 360px;
   max-width: 80vw;
   background: var(--bg-card, #1a1a2e);
-  border-left: 2px solid var(--border, #333);
   z-index: 10000;
   flex-direction: column;
   font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
