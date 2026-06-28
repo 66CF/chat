@@ -1227,21 +1227,11 @@ async function loadSettingsFromMemory() {
     }
     if (settings.webSearch !== undefined) {
       webSearchEnabled = settings.webSearch !== "0";
-      const wBtn = document.getElementById("webSearchBtn");
-      if (wBtn) {
-        wBtn.textContent = webSearchEnabled ? "🔍 联网:开" : "🔍 联网:关";
-        wBtn.style.opacity = webSearchEnabled ? "1" : "0.5";
-      }
     }
     // Restore API keys from memory library
     if (settings.chatModel) {
       chatModel = settings.chatModel;
-      const mBtn = document.getElementById("modelBtn");
-      if (mBtn) {
-        const isPro = chatModel === MIMO_MODEL_PRO;
-        mBtn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
-        mBtn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
-      }
+    }
     }
     if (settings.keys) {
       const k = settings.keys;
@@ -1251,4 +1241,6 @@ async function loadSettingsFromMemory() {
       checkKeys();
     }
   } catch(e) { /* settings.json doesn't exist yet = use defaults */ }
+  // Sync toggle buttons after restoring settings
+  if (typeof syncToggleStates === "function") syncToggleStates();
 }

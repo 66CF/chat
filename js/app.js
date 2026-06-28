@@ -60,16 +60,8 @@ async function startChat() {
   requestNotificationPermission();
   if (proactiveEnabled) scheduleProactiveMessage(0.3); // first message in ~20 seconds
 
-  // Restore web search toggle
-  const wBtn = document.getElementById("webSearchBtn");
-  wBtn.textContent = webSearchEnabled ? "🔍 联网:开" : "🔍 联网:关";
-  wBtn.style.opacity = webSearchEnabled ? "1" : "0.5";
-
-  // Restore model toggle
-  const mBtn = document.getElementById("modelBtn");
-  const isPro = chatModel === MIMO_MODEL_PRO;
-  mBtn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
-  mBtn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
+  // Restore toggle button states
+  syncToggleStates();
 
   // Restore chat messages (memory library > localStorage)
   // Load chat history from memory library
@@ -436,21 +428,13 @@ function toggleModel() {
   } else {
     chatModel = MIMO_MODEL_PRO;
   }
-  const btn = document.getElementById("modelBtn");
   const isPro = chatModel === MIMO_MODEL_PRO;
-  if (btn) {
-    btn.textContent = isPro ? "🧠 Pro" : "⚡ Flash";
-    btn.style.opacity = "1";
-    btn.title = isPro ? "当前: Pro（更强）\n点击切换到 Flash" : "当前: Flash（更快）\n点击切换到 Pro";
-  }
   document.getElementById("statusBar").textContent = isPro ? "🧠 已切换到 Pro 模型（更强）" : "⚡ 已切换到 Flash 模型（更快）";
-  // Update think toggle button
   const thinkBtn = document.getElementById("thinkToggleBtn");
   const thinkLabel = document.getElementById("thinkToggleLabel");
   if (thinkBtn) {
-    thinkBtn.classList.toggle("active", true);
+    thinkBtn.classList.add("active");
     thinkBtn.classList.toggle("active-think", isPro);
-    thinkBtn.classList.toggle("active-search", false);
     if (thinkLabel) thinkLabel.textContent = isPro ? "Pro" : "Flash";
   }
   saveSettingsToMemory();
@@ -461,12 +445,6 @@ function toggleModel() {
 let webSearchEnabled = false;
 function toggleWebSearch() {
   webSearchEnabled = !webSearchEnabled;
-  const btn = document.getElementById("webSearchBtn");
-  if (btn) {
-    btn.textContent = webSearchEnabled ? "🔍 联网:开" : "🔍 联网:关";
-    btn.style.opacity = webSearchEnabled ? "1" : "0.5";
-  }
-  // Update search toggle button
   const searchBtn = document.getElementById("searchToggleBtn");
   const searchLabel = document.getElementById("searchToggleLabel");
   if (searchBtn) {
@@ -474,6 +452,7 @@ function toggleWebSearch() {
     searchBtn.classList.toggle("active-search", webSearchEnabled);
     if (searchLabel) searchLabel.textContent = webSearchEnabled ? "联网" : "";
   }
+  document.getElementById("statusBar").textContent = webSearchEnabled ? "🔍 联网搜索已开启" : "🔍 联网搜索已关闭";
   saveSettingsToMemory();
   localStorage.setItem("vbc_websearch", webSearchEnabled ? "1" : "0");
 }
