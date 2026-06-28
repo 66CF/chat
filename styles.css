@@ -1006,82 +1006,8 @@
   .theme-item:hover .theme-dot { transform: scale(1.15); }
   .theme-dot.active { border-color: var(--text-primary); box-shadow: 0 0 8px var(--accent-glow); }
   .theme-dot-label { font-size: 9px; margin-top: 4px; color: var(--text-secondary); }
-  .call-header-btn {
-    padding: 6px 12px; font-size: 11px;
-    background: transparent; border: 1px solid var(--success);
-    border-radius: 8px; color: var(--success); cursor: pointer;
-    transition: all 0.2s;
-  }
-  .call-header-btn:hover { background: #1a3a24; border-color: var(--success); }
-  .call-header-btn.in-call {
-    background: #3a1a1a; border-color: var(--error); color: var(--error);
-  }
-  .call-header-btn.in-call:hover { background: var(--bg-card); }
 
-  /* Call Overlay */
-  .call-overlay {
-    position: fixed; inset: 0; z-index: 90;
-    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 24px; transition: opacity 0.3s;
-  }
-  .call-overlay.hidden { display: none; }
-  .call-avatar {
-    width: 100px; height: 100px; border-radius: 50px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 42px; color: var(--text-primary); overflow: hidden;
-  }
-  .call-avatar.listening {
-    animation: avatar-glow 2s ease-in-out infinite;
-  }
-  @keyframes avatar-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(196, 149, 106, 0.2); }
-    50% { box-shadow: 0 0 40px rgba(196, 149, 106, 0.5); }
-  }
-  .call-avatar.thinking {
-    animation: avatar-think 1s ease-in-out infinite;
-  }
-  @keyframes avatar-think {
-    0%, 100% { box-shadow: 0 0 20px rgba(196, 149, 106, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(106, 149, 196, 0.5); }
-  }
-  .call-avatar.speaking {
-    animation: avatar-speak 0.5s ease-in-out infinite;
-  }
-  @keyframes avatar-speak {
-    0%, 100% { box-shadow: 0 0 20px rgba(196, 149, 106, 0.3); transform: scale(1); }
-    50% { box-shadow: 0 0 40px rgba(196, 149, 106, 0.6); transform: scale(1.03); }
-  }
-  .call-name { font-size: 22px; font-weight: 600; }
-  .call-status { font-size: 14px; color: var(--text-dim); margin-top: -12px; }
-  .call-timer { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-  .call-transcript {
-    max-width: 320px; text-align: center;
-    font-size: 14px; color: var(--text-secondary); min-height: 42px;
-    line-height: 1.5; padding: 0 20px;
-  }
-  .call-transcript .you { color: var(--accent); }
-  .call-transcript .bot-line { color: var(--text-primary); font-style: italic; }
-  .call-end-btn {
-    width: 64px; height: 64px; border-radius: 32px;
-    background: var(--error); border: none; color: var(--text-primary);
-    font-size: 26px; cursor: pointer; margin-top: 16px;
-    transition: background 0.2s;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .call-end-btn:hover { background: var(--error); }
-  .call-subtitle {
-    position: absolute; bottom: 120px;
-    left: 20px; right: 20px; text-align: center;
-    font-size: 15px; color: var(--text-primary);
-    background: rgba(0,0,0,0.5); padding: 10px 16px;
-    border-radius: 10px; display: none;
-  }
-  .call-subtitle.visible { display: block; }
   /* Memory loading overlay */
-  #memoryLoadingOverlay {
     position: fixed; inset: 0; z-index: 9999;
     background: var(--bg-primary);
     display: flex; flex-direction: column;
@@ -1232,7 +1158,7 @@
       padding-bottom: 2px;
     }
     .header-right::-webkit-scrollbar { display: none; }
-    .header-btn, .call-header-btn {
+    .header-btn {
       padding: 5px 10px;
       font-size: 10px;
       white-space: nowrap;
@@ -1284,10 +1210,6 @@
 
     .theme-picker { right: 10px; left: 10px; max-width: none; }
     .theme-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-
-    .call-avatar { width: 80px; height: 80px; border-radius: 40px; font-size: 34px; }
-    .call-name { font-size: 18px; }
-    .call-transcript { max-width: 90%; font-size: 13px; }
 
     .rp-banner { margin: 6px 10px 4px; font-size: 11px; border-radius: 10px; }
     .game-banner { font-size: 11px; padding: 6px 12px; }

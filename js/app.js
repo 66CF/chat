@@ -26,7 +26,6 @@ async function startChat() {
   document.getElementById("chatInput").disabled = false;
   document.getElementById("sendBtn").disabled = false;
   document.getElementById("modeBtn").disabled = false;
-  document.getElementById("callBtn").disabled = false;
   document.getElementById("statusBar").textContent = "在线 · 语音已连接";
 
   // NOTE: 不再预先请求麦克风权限，避免 Android 手机音量变成电话模式
@@ -216,7 +215,7 @@ function scheduleProactiveMessage(delayMinutes) {
 }
 
 async function sendProactiveMessage() {
-  if (!proactiveEnabled || isInCall || !mimoApiKey || proactiveSending || isBusy) return;
+  if (!proactiveEnabled || !mimoApiKey || proactiveSending || isBusy) return;
   proactiveSending = true;
 
   try {
@@ -635,7 +634,6 @@ async function saveAvatarSettings() {
     } catch(e) { console.warn("Save avatar to memory error:", e); }
   }
   
-  syncCallPageAvatar();
   closeAvatarEditor();
 }
 
@@ -656,13 +654,11 @@ async function restoreAvatarSettings() {
   
   // Then try memory library (overrides localStorage if available)
   if (!memoryEnabled || !memoryDirHandle) {
-    syncCallPageAvatar();
     return;
   }
   try {
     const perm = await memoryDirHandle.queryPermission({ mode: "readwrite" });
     if (perm !== "granted") {
-      syncCallPageAvatar();
       return;
     }
     
@@ -687,8 +683,7 @@ async function restoreAvatarSettings() {
       // Update localStorage with memory library value
       localStorage.setItem("vbc_custom_avatar", customAvatarUrl);
     } catch(e) {} // file doesn't exist = default avatar
-    syncCallPageAvatar();
-  } catch(e) { console.warn("Restore avatar error:", e); syncCallPageAvatar(); }
+  } catch(e) { console.warn("Restore avatar error:", e); }
 }
 
 // === Theme ===
@@ -766,13 +761,13 @@ document.addEventListener("visibilitychange", () => {
   if (mimoInput.value.trim()) {
     el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 MiMo ASR</span>';
   } else {
-    el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别和语音通话需要此项</span>';
+    el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别需要此项</span>';
   }
   mimoInput.addEventListener("input", () => {
     if (mimoInput.value.trim()) {
       el.innerHTML = '🟢 <span style="color:#4a8">已填写，语音识别将使用 MiMo ASR</span>';
     } else {
-      el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别和语音通话需要此项</span>';
+      el.innerHTML = '🟡 <span style="color:#c4956a">未填写时语音消息仍可录制播放，但文字识别需要此项</span>';
     }
   });
 })();

@@ -387,7 +387,6 @@ const Debug = {
       { label: '👀 视监', value: getState('peekEnabled', 'N/A') },
       { label: '📁 记忆库', value: getState('memoryEnabled', 'N/A') },
       { label: '🎭 角色扮演', value: getState('rpActive', 'N/A') },
-      { label: '📞 通话中', value: getState('isInCall', 'N/A') },
       { label: '🔄 批量模式', value: getState('batchMode', 'N/A') },
       { label: '💬 对话历史', value: `${getState('conversationHistory', []).length} 条` },
       { label: '📋 显示消息', value: `${getState('chatMessages', []).length} 条` },
