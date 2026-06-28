@@ -1,0 +1,145 @@
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #1a1a24;
+    --bg-header: #0d0d14;
+    --border: #2a2a36;
+    --border-light: #1e1e2a;
+    --accent: #c4956a;
+    --accent-dark: #a87c5a;
+    --accent-glow: rgba(196, 149, 106, 0.2);
+    --accent-border: rgba(196, 149, 106, 0.2);
+    --text-primary: #e8e4df;
+    --text-secondary: #9a958e;
+    --text-dim: #666;
+    --error: #e07070;
+    --success: #5ab870;
+    --bot-bg: #1a1a2a;
+    --user-bubble-text: #fff;
+  }
+
+  /* 暗色：赤蓝 */
+  [data-theme="redblue"] {
+    --bg-primary: #08080c;
+    --bg-secondary: #0e0e14;
+    --bg-card: #16161e;
+    --bg-header: #0a0a10;
+    --border: #252530;
+    --border-light: #1c1c28;
+    --accent: #c85a5a;
+    --accent-dark: #a84040;
+    --accent-glow: rgba(200, 90, 90, 0.15);
+    --accent-border: rgba(70, 100, 180, 0.25);
+    --text-primary: #e0dde8;
+    --text-secondary: #8888a0;
+    --text-dim: #555568;
+    --error: #e06060;
+    --success: #5ab870;
+    --bot-bg: #141828;
+    --user-bubble-text: #fff;
+  }
+
+  /* 浅色：樱花 */
+  [data-theme="sakura"] {
+    --bg-primary: #fdf2f4;
+    --bg-secondary: #f8e8ec;
+    --bg-card: #ffffff;
+    --bg-header: #fceef1;
+    --border: #d8a0b0;
+    --border-light: #e8b8c4;
+    --accent: #d4687a;
+    --accent-dark: #c05068;
+    --accent-glow: rgba(212, 104, 122, 0.12);
+    --accent-border: rgba(212, 104, 122, 0.15);
+    --text-primary: #2a1018;
+    --text-secondary: #6a4050;
+    --text-dim: #987080;
+    --error: #c84050;
+    --success: #4a8a5a;
+    --bot-bg: #fef6f8;
+    --user-bubble-text: #fff;
+  }
+
+  /* 浅色：薄荷 */
+  [data-theme="mint"] {
+    --bg-primary: #f0f8f4;
+    --bg-secondary: #e4f2ea;
+    --bg-card: #ffffff;
+    --bg-header: #eaf5ef;
+    --border: #90c0a0;
+    --border-light: #b0d4bc;
+    --accent: #4a9a6a;
+    --accent-dark: #3a8058;
+    --accent-glow: rgba(74, 154, 106, 0.12);
+    --accent-border: rgba(74, 154, 106, 0.15);
+    --text-primary: #0e2018;
+    --text-secondary: #3a6050;
+    --text-dim: #6a9880;
+    --error: #c85050;
+    --success: #3a8a4a;
+    --bot-bg: #f4faf6;
+    --user-bubble-text: #fff;
+  }
+
+  /* 浅色：天空 */
+  [data-theme="sky"] {
+    --bg-primary: #f0f5fb;
+    --bg-secondary: #e4edf8;
+    --bg-card: #ffffff;
+    --bg-header: #eaf0f8;
+    --border: #90b0d4;
+    --border-light: #b0c8e0;
+    --accent: #4a80c0;
+    --accent-dark: #3568a8;
+    --accent-glow: rgba(74, 128, 192, 0.12);
+    --accent-border: rgba(74, 128, 192, 0.15);
+    --text-primary: #0e1830;
+    --text-secondary: #3a5070;
+    --text-dim: #6a88a8;
+    --error: #c85050;
+    --success: #3a8a4a;
+    --bot-bg: #f2f7fd;
+    --user-bubble-text: #fff;
+  }
+
+  /* 浅色：薰衣草 */
+  [data-theme="lavender"] {
+    --bg-primary: #f4f0fa;
+    --bg-secondary: #ece6f4;
+    --bg-card: #ffffff;
+    --bg-header: #f0eaf6;
+    --border: #a898cc;
+    --border-light: #c0b4d8;
+    --accent: #7a60b0;
+    --accent-dark: #654a9a;
+    --accent-glow: rgba(122, 96, 176, 0.12);
+    --accent-border: rgba(122, 96, 176, 0.15);
+    --text-primary: #1a1030;
+    --text-secondary: #4a3a68;
+    --text-dim: #7a6898;
+    --error: #c85050;
+    --success: #4a8a5a;
+    --bot-bg: #f8f4fd;
+    --user-bubble-text: #fff;
+  }
+
+  /* 浅色：奶茶 */
+  [data-theme="milktea"] {
+    --bg-primary: #f8f4f0;
+    --bg-secondary: #f0e8e0;
+    --bg-card: #fffefa;
+    --bg-header: #f4eeea;
+    --border: #c4a890;
+    --border-light: #d4c0a8;
+    --accent: #a0785a;
+    --accent-dark: #8a6248;
+    --accent-glow: rgba(160, 120, 90, 0.12);
+    --accent-border: rgba(160, 120, 90, 0.15);
+    --text-primary: #2a1e14;
+    --text-secondary: #685040;
+    --text-dim: #988878;
+    --error: #c85050;
+    --success: #5a8a4a;
+    --bot-bg: #faf6f2;
+    --user-bubble-text: #fff;
+  }

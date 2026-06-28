@@ -1,0 +1,51 @@
+  /* Setup */
+  .setup-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .setup-overlay.hidden { display: none; }
+  .setup-card {
+    width: 380px; max-width: 90vw;
+    text-align: center; padding: 40px 28px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .setup-card p { font-size: 13px; color: var(--text-dim); margin-bottom: 28px; line-height: 1.6; }
+  .setup-card label {
+    display: block; text-align: left;
+    font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; margin-top: 16px;
+  }
+  .setup-card input {
+    width: 100%; padding: 12px 14px; font-size: 14px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text-primary); outline: none;
+  }
+  .setup-card input:focus { border-color: var(--accent); }
+  .setup-card button {
+    width: 100%; padding: 13px; font-size: 15px; font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none; border-radius: 10px; color: var(--text-primary); cursor: pointer;
+    margin-top: 24px; transition: opacity 0.2s;
+  }
+  .setup-card button:disabled { opacity: 0.4; cursor: default; }
+  .setup-card button:hover:not(:disabled) { opacity: 0.9; }
+  .setup-hint {
+    font-size: 11px; color: var(--text-dim); margin-top: 16px; line-height: 1.5;
+  }
+  .setup-hint a { color: var(--accent); text-decoration: none; }
+  .remember-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 14px; justify-content: center;
+  }
+  .remember-row input[type="checkbox"] {
+    width: auto; accent-color: var(--accent);
+  }
+  .remember-row label { font-size: 12px; color: var(--text-secondary); margin: 0; }
+
+  @media (max-width: 768px) {
+    .setup-card { padding: 28px 20px; max-width: 94vw; }
+    .setup-card h2 { font-size: 16px; }
+    .setup-card input { padding: 10px 12px; font-size: 13px; }
+  }

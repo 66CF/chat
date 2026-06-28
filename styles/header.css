@@ -1,0 +1,117 @@
+  /* Header */
+  .header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+    background: var(--bg-header);
+  }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 21px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text-primary); cursor: pointer;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .header-name { font-size: 16px; font-weight: 600; cursor: pointer; }
+  .header-status { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Avatar Editor */
+  .avatar-editor {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60;
+    display: none; align-items: center; justify-content: center;
+  }
+  .avatar-editor.visible { display: flex; }
+  .avatar-editor-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; width: 300px; max-width: 90vw;
+    text-align: center;
+  }
+  .avatar-editor-card h3 { font-size: 15px; margin-bottom: 16px; color: var(--text-primary); }
+  .avatar-preview-lg {
+    width: 80px; height: 80px; border-radius: 40px; margin: 0 auto 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; overflow: hidden; border: 2px solid var(--border);
+  }
+  .avatar-preview-lg img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-editor-card label {
+    font-size: 12px; color: var(--text-secondary); display: block;
+    text-align: left; margin-bottom: 4px;
+  }
+  .avatar-editor-card input[type="text"] {
+    width: 100%; padding: 10px 14px; font-size: 14px;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text-primary); outline: none;
+    margin-bottom: 14px; text-align: center;
+  }
+  .avatar-editor-card input[type="text"]:focus { border-color: var(--accent); }
+  .avatar-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .avatar-btns button {
+    padding: 8px 16px; font-size: 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-secondary);
+    color: var(--text-primary); cursor: pointer;
+  }
+  .avatar-btns .primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none; color: #fff;
+  }
+  .header-right { margin-left: auto; display: flex; gap: 8px; }
+  .header-btn {
+    padding: 6px 12px; font-size: 11px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-dim); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .header-btn.danger:hover { border-color: var(--error); color: var(--error); }
+
+  /* Theme Picker */
+  .theme-picker {
+    position: fixed; top: 60px; right: 20px; z-index: 50;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .theme-picker.visible { display: block; }
+  .theme-picker-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+  .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .theme-item { text-align: center; cursor: pointer; }
+  .theme-dot {
+    width: 36px; height: 36px; border-radius: 18px; margin: 0 auto;
+    border: 2px solid transparent; transition: all 0.2s;
+  }
+  .theme-item:hover .theme-dot { transform: scale(1.15); }
+  .theme-dot.active { border-color: var(--text-primary); box-shadow: 0 0 8px var(--accent-glow); }
+  .theme-dot-label { font-size: 9px; margin-top: 4px; color: var(--text-secondary); }
+
+  @media (max-width: 768px) {
+    .header {
+      padding: 12px 14px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .avatar { width: 36px; height: 36px; border-radius: 18px; font-size: 16px; }
+    .header-name { font-size: 14px; }
+    .header-status { font-size: 11px; }
+    .header-right {
+      width: 100%;
+      margin-left: 0;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .header-right::-webkit-scrollbar { display: none; }
+    .header-btn {
+      padding: 5px 10px;
+      font-size: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .avatar-editor-card { width: 90vw; padding: 20px; }
+
+    .theme-picker { right: 10px; left: 10px; max-width: none; }
+    .theme-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  }
