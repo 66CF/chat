@@ -1232,7 +1232,6 @@ async function loadSettingsFromMemory() {
     if (settings.chatModel) {
       chatModel = settings.chatModel;
     }
-    }
     if (settings.keys) {
       const k = settings.keys;
       if (k.openai) { mimoApiKey = k.openai; document.getElementById("mimoKey").value = k.openai; }
