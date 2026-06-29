@@ -120,17 +120,36 @@ function createStreamMessageProcessor() {
       // Brief typing delay for natural feel
       await new Promise(r => setTimeout(r, 200 + Math.random() * 150));
 
-      // Wait for TTS (usually already resolved since TTS was fired early)
-      const { audioUrl, savedAudioId } = await ttsPromise;
-
-      // Display message bubble
-      appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
+      // Display message text IMMEDIATELY (don't wait for TTS)
+      appendBotMessage(msg.english, msg.chinese, null, true, null);
 
       // Handle file/sticker/music attachments
       await handleMsgAttachments(msg);
 
-      // Play audio and wait for it to finish before next message
-      await playAudioAndWait(audioUrl);
+      // Attach audio when TTS completes (non-blocking for next message)
+      ttsPromise.then(({ audioUrl, savedAudioId }) => {
+        if (audioUrl) {
+          const area = document.getElementById("chatArea");
+          const lastRow = area.querySelector(".msg-row.bot:last-of-type");
+          if (lastRow) {
+            const bubble = lastRow.querySelector(".bubble.bot");
+            if (bubble) {
+              bubble.classList.add("bubble-audio");
+              bubble.setAttribute("data-audio-url", audioUrl);
+              if (savedAudioId) bubble.setAttribute("data-audio-id", savedAudioId);
+              bubble.addEventListener("click", () => handleBubbleReplay(bubble));
+            }
+            // Update chatMessages with audioId
+            const lastMsg = chatMessages[chatMessages.length - 1];
+            if (lastMsg && (lastMsg.role === "bot" || lastMsg.role === "assistant")) {
+              lastMsg.audioId = savedAudioId || null;
+              saveChatHistory();
+            }
+          }
+        }
+      }).catch(() => {});
+
+      // Don't block on TTS — let next message display immediately
     }
   }
 
@@ -277,18 +296,43 @@ async function showMultipleMessages(messages) {
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
 
-    // Reduced typing delay (parallel TTS means TTS is likely already done)
+    // Reduced typing delay
     if (i > 0) await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
 
-    // Wait for this message's TTS (should already be resolved in most cases)
-    const { audioUrl, savedAudioId } = await ttsPromises[i];
+    // Display message text IMMEDIATELY (don't wait for TTS)
+    appendBotMessage(msg.english, msg.chinese, null, true, null);
 
-    appendBotMessage(msg.english, msg.chinese, audioUrl, true, savedAudioId);
-
-    // Handle file/sticker/music attachments (shared with streaming pipeline)
+    // Handle file/sticker/music attachments
     await handleMsgAttachments(msg);
 
-    // Play audio and wait for it to finish before next message
-    await playAudioAndWait(audioUrl);
+    // Attach audio when TTS completes (non-blocking)
+    const idx = i;
+    ttsPromises[idx].then(({ audioUrl, savedAudioId }) => {
+      if (audioUrl) {
+        // Find the message's bubble and attach audio
+        const area = document.getElementById("chatArea");
+        const allBotRows = area.querySelectorAll(".msg-row.bot");
+        // Count how bot messages were displayed so far (idx is 0-based)
+        const targetRow = allBotRows[idx];
+        if (targetRow) {
+          const bubble = targetRow.querySelector(".bubble.bot");
+          if (bubble) {
+            bubble.classList.add("bubble-audio");
+            bubble.setAttribute("data-audio-url", audioUrl);
+            if (savedAudioId) bubble.setAttribute("data-audio-id", savedAudioId);
+            bubble.addEventListener("click", () => handleBubbleReplay(bubble));
+          }
+        }
+        // Update chatMessages
+        const msgIdx = chatMessages.findIndex((m, j) =>
+          j >= chatMessages.length - messages.length + idx &&
+          (m.role === "bot" || m.role === "assistant")
+        );
+        if (msgIdx >= 0) {
+          chatMessages[msgIdx].audioId = savedAudioId || null;
+          saveChatHistory();
+        }
+      }
+    }).catch(() => {});
   }
 }
