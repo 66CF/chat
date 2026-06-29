@@ -212,13 +212,19 @@ async function doTruthDare(choice) {
 
     const systemPrompt = await prepareBotContext(choiceLabel, `[真心话大冒险 - 用户选了${choiceLabel}]`, `[真心话大冒险] 用户选了${choiceLabel}`);
 
-    const rawText = await callMiMoAPI({
+    // === Streaming Pipeline: parse → TTS → display one by one ===
+    const { rawText } = await streamWithTTS({
       system: systemPrompt,
       messages: [...getRecentMessages(), { role: "user", content: prompt }],
-      max_tokens: 128000
+      max_tokens: 128000,
+      onProgress: (completedMsgCount) => {
+        document.getElementById("statusBar").textContent =
+          `正在出题... (${completedMsgCount}条已解析)`;
+      }
     });
 
-    await handleBotReply(rawText);
+    // Streaming handles display internally; just save reply
+    await handleBotReply(rawText, { skipDisplay: true });
 
     lastMessageTime = Date.now();
   } catch(e) {

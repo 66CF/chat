@@ -203,10 +203,26 @@ async function sendRoleplayMessage(userText) {
 
   try {
     const sysPrompt = buildRpSystemPrompt();
-    const rawText = await callMiMoAPI({
+
+    // === Streaming Pipeline for roleplay ===
+    let rawText = "";
+    const proc = createStreamMessageProcessor();
+    let displayed = false;
+
+    rawText = await callMiMoAPIStream({
       system: sysPrompt,
       messages: rpConvHistory.slice(-30),
-      max_tokens: 128000
+      max_tokens: 128000,
+      onChunk: (accumulated) => {
+        // For roleplay, show progressive text in the bubble
+        if (!displayed && accumulated.length > 20) {
+          setLoading(false);
+          displayed = true;
+        }
+        // Update status with progress
+        document.getElementById("statusBar").textContent =
+          `正在构思剧情... (${accumulated.length}字)`;
+      }
     });
 
     rpConvHistory.push({ role: "assistant", content: rawText });
