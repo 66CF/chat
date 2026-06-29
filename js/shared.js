@@ -72,7 +72,7 @@ async function handleBotReply(rawText, options = {}) {
  * @returns {Promise<{rawText: string, messages: Array}>}
  */
 async function streamWithTTS(options) {
-  const { system, messages, max_tokens = 128000, tools = [], onProgress } = options;
+  const { system, messages, max_tokens = 8192, tools = [], onProgress } = options;
   
   // 创建流式消息处理器
   const proc = createStreamMessageProcessor();

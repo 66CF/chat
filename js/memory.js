@@ -123,7 +123,7 @@ const ImprintMemory = {
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
 importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件给0.8+，普通闲聊给0.3-0.5。`,
         messages: [{ role: "user", content: transcript }],
-        max_tokens: 128000
+        max_tokens: 8192
       });
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
@@ -642,7 +642,7 @@ async function retroImportHistory() {
 {"summary":"摘要内容","keywords":["关键词1","关键词2"],"category":"facts|events|insights","importance":0.5}
 importance 范围 0-1，越重要越高。涉及个人偏好/生日/重要事件给0.8+，普通闲聊给0.3-0.5。`,
         messages: [{ role: "user", content: transcript }],
-        max_tokens: 128000
+        max_tokens: 8192
       });
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);

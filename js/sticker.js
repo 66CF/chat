@@ -167,7 +167,7 @@ async function sendUserSticker(sticker) {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: getRecentMessages(),
-      max_tokens: 128000
+      max_tokens: 8192
     });
 
     await handleBotReply(rawText);

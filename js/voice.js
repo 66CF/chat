@@ -176,7 +176,7 @@ async function stopVoiceRecord() {
       const { rawText } = await streamWithTTS({
         system: systemPrompt,
         messages: getRecentMessages(),
-        max_tokens: 128000
+        max_tokens: 8192
       });
 
       // Streaming handles display internally; just save reply

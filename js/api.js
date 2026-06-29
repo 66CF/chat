@@ -7,8 +7,8 @@
  * Shared between callMiMoAPI and callMiMoAPIStream to eliminate duplication.
  */
 function prepareAPIMessages(options) {
-  const { system, messages, model } = options;
-  let { max_tokens = 128000 } = options;
+  const { system, messages, model, thinking } = options;
+  let { max_tokens = 8192 } = options;
   const apiMessages = [];
   if (system) apiMessages.push({ role: "system", content: system });
   for (const m of messages) {
@@ -20,17 +20,19 @@ function prepareAPIMessages(options) {
   const hasImage = apiMessages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === "image_url"));
   if (hasImage && useModel === MIMO_MODEL_PRO) useModel = MIMO_MODEL_FLASH;
   if (hasImage && max_tokens < 2000) max_tokens = 2000;
-  return { apiMessages, useModel, max_tokens };
+  return { apiMessages, useModel, max_tokens, thinking };
 }
 
 async function callMiMoAPI(options) {
   const { tools } = options;
-  const { apiMessages, useModel, max_tokens } = prepareAPIMessages(options);
+  const { apiMessages, useModel, max_tokens, thinking } = prepareAPIMessages(options);
   const body = {
     model: useModel,
     max_tokens,
     messages: apiMessages
   };
+  // 思考模式控制：默认禁用以降低首字延迟
+  body.thinking = thinking || { type: "disabled" };
   if (tools && tools.length > 0) body.tools = tools;
   const res = await fetch(MIMO_API_URL, {
     method: "POST",
@@ -68,13 +70,15 @@ function extractTextFromResponse(data) {
 // === Streaming API (SSE) — for call mode speed optimization ===
 async function callMiMoAPIStream(options) {
   const { tools, onChunk } = options;
-  const { apiMessages, useModel, max_tokens } = prepareAPIMessages(options);
+  const { apiMessages, useModel, max_tokens, thinking } = prepareAPIMessages(options);
   const body = {
     model: useModel,
     max_tokens,
     messages: apiMessages,
     stream: true
   };
+  // 思考模式控制：默认禁用以降低首字延迟
+  body.thinking = thinking || { type: "disabled" };
   if (tools && tools.length > 0) body.tools = tools;
 
   const res = await fetch(MIMO_API_URL, {

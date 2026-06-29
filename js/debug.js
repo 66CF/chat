@@ -102,6 +102,7 @@ const Debug = {
         model: body?.model,
         max_tokens: body?.max_tokens,
         stream: body?.stream,
+        thinking: body?.thinking?.type || 'default',
         messageCount: body?.messages?.length,
         systemLength: body?.messages?.[0]?.role === 'system' ? (body?.messages?.[0]?.content?.length || 0) : 0,
         tools: body?.tools?.length || 0,

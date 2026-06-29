@@ -224,7 +224,7 @@ async function sendMessage() {
       const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: getRecentMessages(),
-        max_tokens: 128000,
+        max_tokens: 8192,
         tools: getWebSearchTool()
       });
 
@@ -250,7 +250,7 @@ async function sendMessage() {
       const rawText = await callMiMoAPI({
         system: systemPrompt,
         messages: [...getRecentMessages(19), { role: "user", content }],
-        max_tokens: 128000,
+        max_tokens: 8192,
         tools: getWebSearchTool()
       });
 
@@ -271,7 +271,7 @@ async function sendMessage() {
       const { rawText } = await streamWithTTS({
         system: systemPrompt,
         messages: getRecentMessages(),
-        max_tokens: 128000,
+        max_tokens: 8192,
         tools: getWebSearchTool(),
         onProgress: (completedMsgCount) => {
           document.getElementById("statusBar").textContent =

@@ -158,7 +158,7 @@ async function sendAllStaged() {
     const { rawText } = await streamWithTTS({
       system: systemPrompt,
       messages: getRecentMessages(),
-      max_tokens: 128000,
+      max_tokens: 8192,
       tools: getWebSearchTool(),
       onProgress: (completedMsgCount) => {
         document.getElementById("statusBar").textContent =

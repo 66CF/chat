@@ -169,7 +169,7 @@ async function sendDressupOutfit() {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: [...getRecentMessages(19), { role: "user", content }],
-      max_tokens: 128000
+      max_tokens: 8192
     });
 
     await handleBotReply(rawText);
@@ -230,7 +230,7 @@ async function sendDefaultOutfit() {
     const rawText = await callMiMoAPI({
       system: systemPrompt,
       messages: getRecentMessages(),
-      max_tokens: 128000
+      max_tokens: 8192
     });
 
     await handleBotReply(rawText);

@@ -212,7 +212,7 @@ async function sendRoleplayMessage(userText) {
     rawText = await callMiMoAPIStream({
       system: sysPrompt,
       messages: rpConvHistory.slice(-30),
-      max_tokens: 128000,
+      max_tokens: 8192,
       onChunk: (accumulated) => {
         // For roleplay, show progressive text in the bubble
         if (!displayed && accumulated.length > 20) {
@@ -339,7 +339,7 @@ ${transcript}
   const rawText = await callMiMoAPI({
     system: "",
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 128000
+    max_tokens: 8192
   });
   return rawText;
 }

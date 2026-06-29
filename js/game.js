@@ -128,7 +128,7 @@ Keep puzzle under 100 characters, answer under 200 characters. Be creative!`;
     const rawText = await callMiMoAPI({
       system: "",
       messages: [{ role: "user", content: puzzlePrompt }],
-      max_tokens: 128000
+      max_tokens: 8192
     });
     const clean = rawText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
@@ -216,7 +216,7 @@ async function doTruthDare(choice) {
     const { rawText } = await streamWithTTS({
       system: systemPrompt,
       messages: [...getRecentMessages(), { role: "user", content: prompt }],
-      max_tokens: 128000,
+      max_tokens: 8192,
       onProgress: (completedMsgCount) => {
         document.getElementById("statusBar").textContent =
           `正在出题... (${completedMsgCount}条已解析)`;

@@ -336,7 +336,7 @@ async function sendProactiveMessage() {
     const { rawText } = await streamWithTTS({
       system: resolveSystemPrompt() + recallBlock,
       messages: reqMsgs,
-      max_tokens: 128000
+      max_tokens: 8192
     });
 
     // 解析消息并提取 wait 参数（需要自定义解析，不能用 handleBotReply）
@@ -595,7 +595,7 @@ async function peekAndReact(userAsked) {
     const { rawText } = await streamWithTTS({
       system: await buildSystemWithRecall("看屏幕"),
       messages: apiMsgs,
-      max_tokens: 128000
+      max_tokens: 8192
     });
 
     // Save assistant reply to history (user peek not saved — image is one-time)
