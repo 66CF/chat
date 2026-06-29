@@ -36,6 +36,7 @@ Schema:
 ### English
 - Style: 【英文说话风格描述，如：natural speech, calm,teasing等】
 - Call user: 【用户称呼的方式，如用什么爱称】
+- English field MUST use English words only — NO Chinese characters allowed in english field. If the nickname is Chinese (like 宝贝), use an English equivalent (baby, honey, etc.) in the english field.
 - NO pinyin
 
 ### 中文
