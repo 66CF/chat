@@ -126,13 +126,15 @@ function createStreamMessageProcessor() {
       // Handle file/sticker/music attachments
       await handleMsgAttachments(msg);
 
+      // Capture this message's row NOW so late-resolving TTS attaches to the correct bubble
+      const area = document.getElementById("chatArea");
+      const targetRow = area.querySelector(".msg-row.bot:last-of-type");
+
       // Attach audio when TTS completes (non-blocking for next message)
       ttsPromise.then(({ audioUrl, savedAudioId }) => {
         if (audioUrl) {
-          const area = document.getElementById("chatArea");
-          const lastRow = area.querySelector(".msg-row.bot:last-of-type");
-          if (lastRow) {
-            const bubble = lastRow.querySelector(".bubble.bot");
+          if (targetRow) {
+            const bubble = targetRow.querySelector(".bubble.bot");
             if (bubble) {
               bubble.classList.add("bubble-audio");
               bubble.setAttribute("data-audio-url", audioUrl);
@@ -305,15 +307,14 @@ async function showMultipleMessages(messages) {
     // Handle file/sticker/music attachments
     await handleMsgAttachments(msg);
 
+    // Capture this message's row NOW so late-resolving TTS attaches to the correct bubble
+    const area = document.getElementById("chatArea");
+    const targetRow = area.querySelector(".msg-row.bot:last-of-type");
+
     // Attach audio when TTS completes (non-blocking)
     const idx = i;
     ttsPromises[idx].then(({ audioUrl, savedAudioId }) => {
       if (audioUrl) {
-        // Find the message's bubble and attach audio
-        const area = document.getElementById("chatArea");
-        const allBotRows = area.querySelectorAll(".msg-row.bot");
-        // Count how bot messages were displayed so far (idx is 0-based)
-        const targetRow = allBotRows[idx];
         if (targetRow) {
           const bubble = targetRow.querySelector(".bubble.bot");
           if (bubble) {
