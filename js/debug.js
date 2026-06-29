@@ -440,6 +440,7 @@ const Debug = {
           model: options.model || (typeof chatModel !== 'undefined' ? chatModel : MIMO_MODEL_PRO),
           max_tokens: options.max_tokens,
           stream: false,
+          thinking: options.thinking || { type: 'disabled' },
           messages: options.messages,
           tools: options.tools
         });
@@ -465,6 +466,7 @@ const Debug = {
           model: options.model || (typeof chatModel !== 'undefined' ? chatModel : MIMO_MODEL_PRO),
           max_tokens: options.max_tokens,
           stream: true,
+          thinking: options.thinking || { type: 'disabled' },
           messages: options.messages,
           tools: options.tools
         });
